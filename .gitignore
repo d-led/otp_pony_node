@@ -1,0 +1,6 @@
+otp_pony_node
+*.exe
+*.exp
+*.ilk
+*.lib
+*.pdb
