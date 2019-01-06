@@ -12,8 +12,8 @@ primitive ErlInterfaceInit
 // erl_interface.h
 class ErlInterface
     // constants:
-    let _erl_tick: U32 = 0
-    let _erl_msg: U32 = 1
+    let _erl_tick: I32 = 0
+    let _erl_msg: I32 = 1
 
     let buf_size: USize = 1024*16
     let buf: Array[U8] = Array[U8].init(0, buf_size)
@@ -38,11 +38,18 @@ class ErlInterface
 
     fun ref receive(sock: I32) : I32 =>
         """
-        blocks until it receives a regular erlang message
+        blocks the scheduler until it receives a regular erlang message
         """
         //int    erl_receive_msg(int, unsigned char*, int, ErlMessage*)
         // @erl_receive_msg[I32](sock, buf.cpointer(), buf_size.i32(), MaybePointer[ErlMessage](emsg))
-        @erl_receive[I32](sock, buf.cpointer(), buf_size.i32())
+        var res = _erl_tick
+        while res == _erl_tick do
+            // http://erlang.org/documentation/doc-7.1/lib/erl_interface-3.8/doc/html/erl_connect.html#erl_receive_msg
+            // this may return an error status, e.g. when the buffer size is insufficient
+            res = @erl_receive[I32](sock, buf.cpointer(), buf_size.i32())
+        end
+
+        res
 
 // int    erl_connect(char*);
 // int    erl_connect_init(int, char*, short);

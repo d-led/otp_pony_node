@@ -23,7 +23,7 @@ actor PonyNode
             if res < 0 then
                 break
             end
-            _env.out.print("recieved from other nodes: "+ res.string() + " bytes")
+            _env.out.print("recieved from the connected node: "+ res.string() + " bytes")
         end
 
         _env.out.print("disconnected")
