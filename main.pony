@@ -9,9 +9,10 @@ primitive ErlInterfaceInit
         @erl_init[None](Pointer[None], I32(0))
 
 struct ErlMessage
-  var mtype: I32 = 0
-
-  new create() => None
+    var mtype: I32 = 0
+    // incomplete!!
+    // todo
+    new create() => None
 
 // erl_interface.h
 class ErlInterface
@@ -49,6 +50,7 @@ actor Main
     end
     env.out.print("connected: " + sock.string())
     let name = String.from_cstring(@erl_thisnodename[Pointer[U8]]())
+    // this is the node name to send messages to 
     env.out.print(name.string())
 
     while true do
