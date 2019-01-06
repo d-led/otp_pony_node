@@ -17,7 +17,6 @@ class ErlInterface
 
     let buf_size: USize = 1024*16
     let buf: Array[U8] = Array[U8].init(0, buf_size)
-    let emsg: ErlMessage = ErlMessage
 
     fun simple_connect(node: String, cookie: String) : I32 =>
         // -> c1@localhost
@@ -36,20 +35,23 @@ class ErlInterface
         @erl_connect[I32](node.cstring())
 
 
-    fun ref receive(sock: I32) : I32 =>
+    fun ref demo_receive(sock: I32) : ErlMessage =>
         """
         blocks the scheduler until it receives a regular erlang message
         """
         //int    erl_receive_msg(int, unsigned char*, int, ErlMessage*)
         // @erl_receive_msg[I32](sock, buf.cpointer(), buf_size.i32(), MaybePointer[ErlMessage](emsg))
         var res = _erl_tick
+        let emsg: ErlMessage = ErlMessage
+
         while res == _erl_tick do
             // http://erlang.org/documentation/doc-7.1/lib/erl_interface-3.8/doc/html/erl_connect.html#erl_receive_msg
             // this may return an error status, e.g. when the buffer size is insufficient
-            res = @erl_receive[I32](sock, buf.cpointer(), buf_size.i32())
+            // res = @erl_receive[I32](sock, buf.cpointer(), buf_size.i32())
+            res = @erl_receive_msg[I32](sock, buf.cpointer(), buf_size.i32(), MaybePointer[ErlMessage](emsg))            
         end
 
-        res
+        consume emsg
 
 // int    erl_connect(char*);
 // int    erl_connect_init(int, char*, short);

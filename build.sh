@@ -2,4 +2,4 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-ponyc
+ponyc -d

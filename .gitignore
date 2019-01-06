@@ -4,3 +4,4 @@ otp_pony_node
 *.ilk
 *.lib
 *.pdb
+*.dSYM**

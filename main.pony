@@ -19,11 +19,12 @@ actor PonyNode
         _env.out.print(name.string())
 
         while true do
-            let res = erl.receive(sock)
-            if res < 0 then
+            let msg = erl.demo_receive(sock)
+            if msg.mtype <= 0 then
                 break
             end
-            _env.out.print("recieved from the connected node: "+ res.string() + " bytes")
+            _env.out.print("recieved from the connected node: " + msg.mtype.string())
+            msg.free()
         end
 
         _env.out.print("disconnected")
