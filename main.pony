@@ -20,16 +20,25 @@ actor PonyNode
             return
         end
 
-        if not erl.connect("demo@localhost") then
+        let conn = erl.connect("demo@localhost")
+
+        if conn < 0 then
             _env.out.print("could not connect")
             return
         end
-        
-        _env.out.print("connected")
 
+        _env.out.print("connected as " + erl.node_name())
 
-        
-        erl.receive()
+        while true do  
+            try
+                var msg = erl.receive(conn) ?
+                // String.from_array(msg.inner.from.node)...
+                _env.out.print("received a message from pid:" + msg.inner.from.num.string())
+            else
+                _env.out.print("failed receiving")
+                break
+            end
+        end
         
 
 actor Main

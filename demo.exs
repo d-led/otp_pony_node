@@ -6,7 +6,7 @@ defmodule Demo do
 
     def run(tries) do
         {:ok, hostname} = :inet.gethostname
-        pony = {:any, :"c1@#{String.downcase("#{hostname}")}"}
+        pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
         IO.inspect(pony)
         send(pony, {self(),"Hi!"})
         receive do
