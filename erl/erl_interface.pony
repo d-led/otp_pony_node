@@ -1,61 +1,46 @@
 // todo: find a robust way to supply the dependencies
 use "path:/usr/local/Cellar/erlang/21.2.2/lib/erlang/lib/erl_interface-3.10.4/lib/" if osx
 
-use "lib:erl_interface" if osx
 use "lib:ei" if osx
 
-primitive ErlInterfaceInit
-    fun apply() =>
-        // void   erl_init(void *x, long y);
-        @erl_init[None](Pointer[None], I32(0))
+interface ErlInterface
+    fun valid(): Bool => false
+    fun ref connect(nodename: String) : Bool
+    fun ref receive() => None
+
+class NullInterface
+    fun valid(): Bool => false
+    fun ref connect(nodename: String) : Bool => false
+    fun ref receive() => None
+
+struct ErlangPid
+    var node: Array[U8] = Array[U8].init(0, /*MAXATOMLEN_UTF8*/ (255*4) + 1)
+    var num: U32 = 0
+    var serial: U32 = 0
+    var creation: U32 = 0
+
+struct EiNode
+    var thishostname: Array[U8] = Array[U8].init(0, /*EI_MAXHOSTNAMELEN*/ 64+1)
+    var thisalivename: Array[U8] = Array[U8].init(0, /*EI_MAXALIVELEN*/ 63+1)
+    var ei_connect_cookie: Array[U8] = Array[U8].init(0, /*EI_MAX_COOKIE_SIZE*/ 512+1)
+    var creation: I16 = 0
+    embed self: ErlangPid = ErlangPid
+
 
 // erl_interface.h
-class ErlInterface
-    // constants:
-    let _erl_tick: I32 = 0
-    let _erl_msg: I32 = 1
+class EInterface
+    let node: EiNode = EiNode
 
-    let buf_size: USize = 1024*16
-    let buf: Array[U8] = Array[U8].init(0, buf_size)
+    fun valid(): Bool => true
 
-    fun simple_connect(node: String, cookie: String) : I32 =>
-        // -> c1@localhost
-        var res = @erl_connect_init[I32](I32(1)/*id*/, cookie.cstring(), I8(0)/*instance*/)
-        if res < 0 then
-            return res
-        end
-        @erl_connect[I32](node.cstring())
-
-    fun connect(node: String, cookie: String, node_name: String = "pony", hostname: String = "localhost", full_name: String = "pony@localhost") : I32 =>
-        // -> c1@localhost
-        var res = @erl_connect_xinit[I32](I32(1)/*id*/, cookie.cstring(), I8(0)/*instance*/)
-        if res < 0 then
-            return res
-        end
-        @erl_connect[I32](node.cstring())
-
-
-    fun ref demo_receive(sock: I32) : ErlMessage =>
-        """
-        blocks the scheduler until it receives a regular erlang message
-        """
-        //int    erl_receive_msg(int, unsigned char*, int, ErlMessage*)
-        // @erl_receive_msg[I32](sock, buf.cpointer(), buf_size.i32(), MaybePointer[ErlMessage](emsg))
-        var res = _erl_tick
-        let emsg: ErlMessage = ErlMessage
-
-        while res == _erl_tick do
-            // http://erlang.org/documentation/doc-7.1/lib/erl_interface-3.8/doc/html/erl_connect.html#erl_receive_msg
-            // this may return an error status, e.g. when the buffer size is insufficient
-            // res = @erl_receive[I32](sock, buf.cpointer(), buf_size.i32())
-            res = @erl_receive_msg[I32](sock, buf.cpointer(), buf_size.i32(), MaybePointer[ErlMessage](emsg))            
+    new create(nodename: String, cookie: String, creation: I16 = 0) ? =>
+        // int ei_connect_init(ei_cnode* ec, const char* this_node_name, const char *cookie, short creation)
+        if @ei_connect_init[I32](MaybePointer[EiNode](node), nodename.cstring(), cookie.cstring(), creation) < 0 then
+            error
         end
 
-        consume emsg
-
-// int    erl_connect(char*);
-// int    erl_connect_init(int, char*, short);
-// int    erl_connect_xinit(char*,char*,char*,struct in_addr*,char*,short);
-
-// iex --sname iex@localhost --cookie secretcookie
-
+    fun ref connect(nodename: String) : Bool =>
+        // int ei_connect(ei_cnode* ec, char *nodename)
+        @ei_connect[I32](MaybePointer[EiNode](node), nodename.cstring()) >= 0
+    
+    fun ref receive() => None

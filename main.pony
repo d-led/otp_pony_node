@@ -1,37 +1,38 @@
 use "erl"
+use "debug"
 
 actor PonyNode
     let _env : Env
-    let erl : ErlInterface = ErlInterface
+    var erl : ErlInterface = NullInterface
 
     new create(env: Env) =>
         _env = env
+        try 
+            erl = EInterface("pony", "secretcookie") ?
+        else
+            _env.out.print("could not create a Pony node")
+            Debug.err("could not create a Pony node")
+        end
 
     be demo() =>
-        let sock = erl.simple_connect("demo@localhost", "secretcookie") 
-        if sock < 0 then
-            _env.out.print("failed to connect")
+        if not erl.valid() then
+            _env.out.print("an error happened: aborting")
             return
         end
-        _env.out.print("connected: " + sock.string())
-        let name = String.from_cstring(@erl_thisnodename[Pointer[U8]]())
-        // this is the node name to send messages to 
-        _env.out.print(name.string())
 
-        while true do
-            let msg = erl.demo_receive(sock)
-            if msg.mtype <= 0 then
-                break
-            end
-            _env.out.print("recieved from the connected node: " + msg.mtype.string())
-            msg.free()
+        if not erl.connect("demo@localhost") then
+            _env.out.print("could not connect")
+            return
         end
+        
+        _env.out.print("connected")
 
-        _env.out.print("disconnected")
 
+        
+        erl.receive()
+        
 
 actor Main
   new create(env: Env) =>
-    ErlInterfaceInit()
     let n = PonyNode(env)
     n.demo()
