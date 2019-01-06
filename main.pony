@@ -48,5 +48,10 @@ actor Main
         return
     end
     env.out.print("connected: " + sock.string())
-    let res = erl.receive(sock)
-    env.out.print(res.string())
+    let name = String.from_cstring(@erl_thisnodename[Pointer[U8]]())
+    env.out.print(name.string())
+
+    while true do
+        let res = erl.receive(sock)
+        env.out.print(res.string())
+    end
