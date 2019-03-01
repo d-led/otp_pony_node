@@ -6,6 +6,7 @@ class EInterface
     let cookie: String
     let creation: I16
     var connection: Pointer[None] = Pointer[None]
+    var connection_id: Connection = -1
 
     new create(this_nodename': String, cookie': String, creation': I16 = 0) =>
         this_nodename = this_nodename'
@@ -28,8 +29,8 @@ class EInterface
             return ConnectionFailed
         end
 
-        var conn: Connection = @opn_ei_connect[I32](connection, nodename.cstring())
-        if conn < 0 then
+        connection_id = @opn_ei_connect[I32](connection, nodename.cstring())
+        if connection_id < 0 then
             disconnect()
             return ConnectionFailed
         end
@@ -43,6 +44,7 @@ class EInterface
 
         @opn_ei_delete[None](connection)
         connection = Pointer[None]
+        connection_id = -1
 
     fun connected(): Bool =>
         connection != Pointer[None]
