@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "*.pony": "cpp"
+        "*.pony": "cpp",
+        "__functional_base": "cpp"
     }
 }

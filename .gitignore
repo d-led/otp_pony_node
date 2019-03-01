@@ -5,3 +5,6 @@ otp_pony_node
 *.lib
 *.pdb
 *.dSYM**
+obj/
+*.pony_
+*.so
