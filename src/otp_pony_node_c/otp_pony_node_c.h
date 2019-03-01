@@ -19,7 +19,9 @@ OPN_API void opn_set_tracelevel(int level);
 // see https://rfc.zeromq.org/spec:21/CLASS/
 typedef struct _opn_ei_t opn_ei_t;
 
-OPN_API opn_ei_t * opn_ei_new (const char* nodename, const char* cookie, int creation);
+OPN_API opn_ei_t * opn_ei_new (const char* this_nodename, const char* cookie, int creation);
+
+OPN_API int opn_ei_connect (opn_ei_t *self, const char* nodename);
 
 // CLASS version
 OPN_API void opn_ei_destroy (opn_ei_t **self_p);

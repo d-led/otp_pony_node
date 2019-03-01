@@ -13,7 +13,7 @@ actor PonyNode
         erl.set_tracelevel(5)
 
     be demo() =>
-        let connected = erl.connect()
+        let connected = erl.connect("demo@localhost")
         match connected
         | ConnectionFailed => 
           _env.out.print("Connection failed. Exiting")

@@ -1,2 +1,3 @@
 primitive ConnectionFailed
 primitive ConnectionSucceeded
+type Connection is I32
