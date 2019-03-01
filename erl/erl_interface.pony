@@ -42,7 +42,7 @@ class EInterface
             return
         end
 
-        @opn_ei_delete[None](connection)
+        @opn_ei_destroy[None](addressof connection)
         connection = Pointer[None]
         connection_id = -1
 
@@ -51,5 +51,5 @@ class EInterface
 
     fun _final() =>
         if connection != Pointer[None] then
-            @opn_ei_delete[None](connection)
+            @opn_ei_destroy[None](addressof connection)
         end

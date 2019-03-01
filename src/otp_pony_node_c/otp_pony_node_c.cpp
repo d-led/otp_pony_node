@@ -63,10 +63,3 @@ void opn_ei_destroy(opn_ei_t **self_p)
         *self_p = nullptr;
     }
 }
-
-void opn_ei_delete(opn_ei_t *self)
-{
-    if (self) {
-        delete self;
-    }
-}
