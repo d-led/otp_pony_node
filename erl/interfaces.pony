@@ -1,1 +1,2 @@
-primitive CoulNotConnect
+primitive ConnectionFailed
+primitive ConnectionSucceeded

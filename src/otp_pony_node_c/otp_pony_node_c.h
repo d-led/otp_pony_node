@@ -14,13 +14,18 @@
 extern "C" {
 #endif
 
+OPN_API void opn_set_tracelevel(int level);
+
 // see https://rfc.zeromq.org/spec:21/CLASS/
 typedef struct _opn_ei_t opn_ei_t;
 
 OPN_API opn_ei_t * opn_ei_new (const char* nodename, const char* cookie, int creation);
+
+// CLASS version
 OPN_API void opn_ei_destroy (opn_ei_t **self_p);
 
-OPN_API void opn_set_tracelevel(int level);
+// a less safe version for Pony use
+OPN_API void opn_ei_delete (opn_ei_t *self);
 
 #if defined(__cplusplus)
 }
