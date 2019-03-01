@@ -54,8 +54,8 @@ class EBuffer
     var xbuff: EiXBuff = EiXBuff
 
     new create() ? =>
-        // int ei_x_new(ei_x_buff* x);
-        if @ei_x_new[I32](MaybePointer[EiXBuff](xbuff)) < 0 then
+        // int ei_x_new_with_version(ei_x_buff* x);
+        if @ei_x_new_with_version[I32](MaybePointer[EiXBuff](xbuff)) < 0 then
             Debug.err("Failed: EBuffer.create()")
             error
         end
@@ -88,6 +88,10 @@ class EInterface
     fun ref connect(nodename: String) : I32 =>
         // int ei_connect(ei_cnode* ec, char *nodename)
         @ei_connect[I32](MaybePointer[EiNode](node), nodename.cstring())
+
+    fun ref set_tracelevel(level: I32) =>
+        // void ei_set_tracelevel(int level)
+        @ei_set_tracelevel[None](level)
     
     fun ref receive(fd: I32) : EMessage ? =>
         let buf = EBuffer.create() ?

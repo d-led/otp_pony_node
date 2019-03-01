@@ -20,4 +20,6 @@ defmodule Demo do
     end
 end
 
+IO.puts("this process: #{inspect(self())})")
+
 Demo.run()

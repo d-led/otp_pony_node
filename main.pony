@@ -9,6 +9,7 @@ actor PonyNode
         _env = env
         try 
             erl = EInterface("pony", "secretcookie") ?
+            erl.set_tracelevel(5)
         else
             _env.out.print("could not create a Pony node")
             Debug.err("could not create a Pony node")
@@ -31,8 +32,9 @@ actor PonyNode
 
         while true do  
             try
-                var msg = erl.receive(conn) ?
+                var msg: EMessage = erl.receive(conn) ?
                 // String.from_array(msg.inner.from.node)...
+                // msg.inner.from.node.copy_to(node)
                 _env.out.print("received a message from pid:" + msg.inner.from.num.string())
             else
                 _env.out.print("failed receiving")
