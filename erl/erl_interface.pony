@@ -24,7 +24,7 @@ class EInterface
         end
 
         connection = @opn_ei_new[Pointer[None]](this_nodename.cstring(), cookie.cstring(), creation)
-        Debug.out("res: " + connection.usize().string())
+
         if connection.is_null() then
             return ConnectionFailed
         end
@@ -37,12 +37,17 @@ class EInterface
 
         ConnectionSucceeded
         
-    fun ref receive(): (String | ReceiveFailed) =>
+    fun ref receive(): (EMessage | ReceiveFailed) =>
         if connection_id < 0 then
             return ReceiveFailed
         end
 
-        ""
+        let message_p = @opn_ei_receive[Pointer[None]](connection, connection_id)
+        if message_p == Pointer[None] then
+            return ReceiveFailed
+        end
+        
+        EMessage(message_p)
 
     fun ref disconnect() =>
         if not connected() then 

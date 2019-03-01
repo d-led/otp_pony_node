@@ -19,17 +19,56 @@ struct _opn_ei_t
     ei_cnode node;
 };
 
-// int connect(opn_ei_t * self) {
-//     if (ei_connect_init(&ec, thisnodename.c_str(), cookie.c_str(), creation) < 0)
-// }
-
-        // @ei_connect[I32](MaybePointer[EiNode](node), nodename.cstring())
+struct _opn_ei_message_t
+{
+    erlang_msg msg;
+    ei_x_buff buff;
+};
 
 int opn_ei_connect(opn_ei_t *self, const char* nodename)
 {
     assert(self);
     assert(nodename);
     return ei_connect(&self->node, (char*)nodename);
+}
+
+opn_ei_message_t * opn_ei_new_message()
+{
+    try
+    {
+        opn_ei_message_t * m = new opn_ei_message_t;
+        if (ei_x_new(&m->buff) < 0) {
+            delete m;
+            return nullptr;
+        }
+        
+        return m;
+    }
+    catch (std::exception &e)
+    {
+        std::cerr << "opn_ei_new_message: " << e.what() << std::endl;
+        return nullptr;
+    }
+}
+
+opn_ei_message_t * opn_ei_receive (opn_ei_t *self, int connection_id)
+{
+    assert(self);
+
+    opn_ei_message_t * m = opn_ei_new_message();
+    if (!m)
+        return nullptr;
+
+    int res = ei_xreceive_msg(connection_id, &m->msg, &m->buff);
+
+    // todo: complex protocol handling & returning the message appropriately
+
+    if (res < 0) {
+        opn_ei_message_destroy(&m);
+        return nullptr;
+    }
+
+    return m;
 }
 
 opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation)
@@ -54,11 +93,28 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation
     }
 }
 
+size_t opn_ei_message_length(opn_ei_message_t *self)
+{
+    assert(self);
+    return self->buff.buffsz;
+}
+
 void opn_ei_destroy(opn_ei_t **self_p)
 {
     assert (self_p);
     if (*self_p) {
         opn_ei_t *self = *self_p;
+        delete self;
+        *self_p = nullptr;
+    }
+}
+
+void opn_ei_message_destroy(opn_ei_message_t **self_p)
+{
+    assert (self_p);
+    if (*self_p) {
+        opn_ei_message_t *self = *self_p;
+        ei_x_free(&self->buff);
         delete self;
         *self_p = nullptr;
     }

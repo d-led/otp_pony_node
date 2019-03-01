@@ -10,7 +10,7 @@ actor PonyNode
     new create(env: Env) =>
         _env = env
         erl = EInterface("pony", "secretcookie")
-        erl.set_tracelevel(5)
+        // erl.set_tracelevel(5)
 
     be demo() =>
         let connected = erl.connect("demo@localhost")
@@ -23,21 +23,21 @@ actor PonyNode
         end
 
         while true do  
+          // todo: receive with timeout
           let receved = erl.receive()
           match receved
           | ReceiveFailed =>
             _env.out.print("Receive failed. Disconnecting")
             break
           // todo: full message
-          | let s: String =>
-            _env.out.print("Received: " + s)
-            break //for now
+          | let m: EMessage =>
+            _env.out.print("Received: " + m.length().string() + "bytes")
           end
         end
 
         erl.disconnect()
 
-        
+
 
 actor Main
   new create(env: Env) =>
