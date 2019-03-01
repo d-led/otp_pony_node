@@ -13,7 +13,7 @@ defmodule Demo do
             m -> IO.puts "received: #{m}"
         after
             3_000 ->
-                IO.puts "nobody sent anything, exiting"
+                IO.puts "nobody sent anything, continuing"
         end
 
         run(tries - 1)

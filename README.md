@@ -8,7 +8,7 @@
 successful POC:
 
 - messages received
-- graceful handling failed receive
+- graceful handling a failed receive
 
 ```txt
 $ ./otp_pony_node
