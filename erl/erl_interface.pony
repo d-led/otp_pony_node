@@ -37,6 +37,13 @@ class EInterface
 
         ConnectionSucceeded
         
+    fun ref receive(): (String | ReceiveFailed) =>
+        if connection_id < 0 then
+            return ReceiveFailed
+        end
+
+        ""
+
     fun ref disconnect() =>
         if not connected() then 
             return

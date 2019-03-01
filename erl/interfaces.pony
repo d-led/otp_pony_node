@@ -1,3 +1,4 @@
 primitive ConnectionFailed
 primitive ConnectionSucceeded
+primitive ReceiveFailed
 type Connection is I32

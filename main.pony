@@ -21,24 +21,19 @@ actor PonyNode
         | ConnectionSucceeded =>
           _env.out.print("Connection successful")
         end
-        // if conn < 0 then
-        //     _env.out.print("could not connect")
-        //     return
-        // end
 
-        // _env.out.print("connected as " + erl.node_name())
-
-        // while true do  
-        //     try
-        //         var msg: EMessage = erl.receive(conn) ?
-        //         // String.from_array(msg.inner.from.node)...
-        //         // msg.inner.from.node.copy_to(node)
-        //         _env.out.print("received a message from pid:" + msg.inner.from.num.string())
-        //     else
-        //         _env.out.print("failed receiving")
-        //         break
-        //     end
-        // end
+        while true do  
+          let receved = erl.receive()
+          match receved
+          | ReceiveFailed =>
+            _env.out.print("Receive failed. Disconnecting")
+            break
+          // todo: full message
+          | let s: String =>
+            _env.out.print("Received: " + s)
+            break //for now
+          end
+        end
 
         erl.disconnect()
 
