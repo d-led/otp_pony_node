@@ -8,7 +8,7 @@ defmodule Demo do
         {:ok, hostname} = :inet.gethostname
         pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
         IO.inspect(pony)
-        send(pony, {self(),"Hi!"})
+        send(pony, {self(),"#{tries}: Hi!"})
         receive do
             m -> IO.puts "received: #{m}"
         after

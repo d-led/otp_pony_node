@@ -99,6 +99,22 @@ size_t opn_ei_message_length(opn_ei_message_t *self)
     return self->buff.buffsz;
 }
 
+int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* size)
+{
+    assert(self);
+    assert(type);
+    assert(size);
+    return ei_get_type(self->buff.buff, &index, type, size);
+}
+
+int opn_ei_message_atom_at(opn_ei_message_t *self, int index, char* buffer)
+{
+    assert(self);
+    assert(buffer);
+
+    return ei_decode_atom(self->buff.buff, &index, buffer);
+}
+
 void opn_ei_destroy(opn_ei_t **self_p)
 {
     assert (self_p);

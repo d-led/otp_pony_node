@@ -2,16 +2,16 @@ use "lib:otp_pony_node_c"
 use "debug"
 
 class EInterface
-    let this_nodename: String
-    let cookie: String
-    let creation: I16
-    var connection: Pointer[None] = Pointer[None]
-    var connection_id: Connection = -1
+    let _this_nodename: String
+    let _cookie: String
+    let _creation: I16
+    var _connection: Pointer[None] = Pointer[None]
+    var _connection_id: Connection = -1
 
     new create(this_nodename': String, cookie': String, creation': I16 = 0) =>
-        this_nodename = this_nodename'
-        cookie = cookie'
-        creation = creation'
+        _this_nodename = this_nodename'
+        _cookie = cookie'
+        _creation = creation'
 
     fun set_tracelevel(level: I32) =>
         @opn_set_tracelevel[None](level)
@@ -23,14 +23,14 @@ class EInterface
             return ConnectionFailed
         end
 
-        connection = @opn_ei_new[Pointer[None]](this_nodename.cstring(), cookie.cstring(), creation)
+        _connection = @opn_ei_new[Pointer[None]](_this_nodename.cstring(), _cookie.cstring(), _creation)
 
-        if connection.is_null() then
+        if _connection.is_null() then
             return ConnectionFailed
         end
 
-        connection_id = @opn_ei_connect[I32](connection, nodename.cstring())
-        if connection_id < 0 then
+        _connection_id = @opn_ei_connect[I32](_connection, nodename.cstring())
+        if _connection_id < 0 then
             disconnect()
             return ConnectionFailed
         end
@@ -38,11 +38,11 @@ class EInterface
         ConnectionSucceeded
         
     fun ref receive(): (EMessage | ReceiveFailed) =>
-        if connection_id < 0 then
+        if _connection_id < 0 then
             return ReceiveFailed
         end
 
-        let message_p = @opn_ei_receive[Pointer[None]](connection, connection_id)
+        let message_p = @opn_ei_receive[Pointer[None]](_connection, _connection_id)
         if message_p == Pointer[None] then
             return ReceiveFailed
         end
@@ -54,14 +54,14 @@ class EInterface
             return
         end
 
-        @opn_ei_destroy[None](addressof connection)
-        connection = Pointer[None]
-        connection_id = -1
+        @opn_ei_destroy[None](addressof _connection)
+        _connection = Pointer[None]
+        _connection_id = -1
 
     fun connected(): Bool =>
-        connection != Pointer[None]
+        _connection != Pointer[None]
 
     fun _final() =>
-        if connection != Pointer[None] then
-            @opn_ei_destroy[None](addressof connection)
+        if _connection != Pointer[None] then
+            @opn_ei_destroy[None](addressof _connection)
         end

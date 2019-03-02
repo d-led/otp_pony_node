@@ -32,6 +32,13 @@ actor PonyNode
           // todo: full message
           | let m: EMessage =>
             _env.out.print("Received: " + m.length().string() + "bytes")
+              (let a, let s) = m.atom_at(m.header_size)
+              match a
+              | let text: String =>
+                _env.out.print("First atom: " + text)
+              else
+                _env.out.print("Expected an atom, but failed")
+              end
           end
         end
 

@@ -25,6 +25,7 @@ Receive failed. Disconnecting
   - receive with timeout
   - send/send with timeout
   - destructuring the messages in Pony
+- Travis CI
 - testing strategy
 - reconnects?
 
