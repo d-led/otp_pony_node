@@ -128,12 +128,22 @@ int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* si
     return ei_get_type(self->buff.buff, &index, type, size);
 }
 
-int opn_ei_message_atom_at(opn_ei_message_t *self, int index, char* buffer)
+int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer)
 {
     assert(self);
     assert(buffer);
+    assert(index);
 
-    return ei_decode_atom(self->buff.buff, &index, buffer);
+    return ei_decode_atom(self->buff.buff, index, buffer);
+}
+
+int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity)
+{
+    assert(self);
+    assert(index);
+    assert(arity);
+
+    return ei_decode_tuple_header(self->buff.buff, index, arity);
 }
 
 void opn_ei_destroy(opn_ei_t **self_p)

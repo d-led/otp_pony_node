@@ -50,7 +50,12 @@ actor PonyNode
     fun handle_message(m: EMessage ref) =>
       _env.out.print("Received: " + m.length().string() + "bytes")
       m.debug_type_at(m.beginning)
-      // (var a, var s) = m.atom_at(m.header_size)
+      // expecting a tuple with a pid & a message (binary)
+      (var arity, var pos) = m.tuple_arity_at(m.beginning)
+      if arity != 2 then
+        _env.out.print("Didn't expect tuple arity of " + arity.string())
+        return
+      end
       // print_string_or_none(a, s)
       // (a, s) = m.atom_at(m.header_size + s)
       // print_string_or_none(a, s)

@@ -18,7 +18,7 @@ class EMessage
         var size': I32 = 0
         let res = @opn_ei_message_type_at[I32](_message, pos, addressof type', addressof size')
 
-        Debug.out("p:"+pos.string()+" t:"+type'.string()+" s:"+size'.string())
+        // Debug.out("p:"+pos.string()+" t:"+type'.string()+" s:"+size'.string())
 
         if res != 0 then
             return (TermType.none(), 0)
@@ -27,7 +27,7 @@ class EMessage
         (type', size')
 
     // t_ERL_ATOM_EXT
-    // returns string or nothing, and the number of bytes read
+    // returns string or nothing, and the next position
     fun ref atom_at(pos: I32): ((String | None), I32) =>
         (let t, let s) = type_at(pos)
         if t != TermType.t_ERL_ATOM_EXT() then
@@ -36,13 +36,32 @@ class EMessage
 
         let buffer: Array[U8] val = recover Array[U8].init(0, s.usize() + 1 /*null*/) end
 
-        let res = @opn_ei_message_atom_at[I32](_message, pos, buffer.cpointer())
+        var index: I32 = pos
+        let res = @opn_ei_message_atom_at[I32](_message, addressof index, buffer.cpointer())
 
         if res < 0 then
             return (None, 0)
         end
 
-        (String.from_array(buffer), s)
+        (String.from_array(buffer), index)
+
+    // returns (-1, 0) if not a tuple
+    // otherwise: arity, next position
+    fun ref tuple_arity_at(pos: I32): (I32, I32) =>
+        (let t, let s) = type_at(pos)
+        if (t != TermType.t_ERL_SMALL_TUPLE_EXT()) and (t != TermType.t_ERL_LARGE_TUPLE_EXT()) then
+            return (-1, 0)
+        end
+
+        var index: I32 = pos
+        var arity: I32 = -1
+        let res = @opn_ei_message_tuple_arity_at[I32](_message, addressof index, addressof arity)
+
+        if res < 0 then
+            return (-1, 0)
+        end
+
+        (arity, index)    
 
     fun ref debug_type_at(pos: I32) =>
         (let t, let s) = type_at(pos)

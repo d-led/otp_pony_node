@@ -19,6 +19,18 @@ Received: 100bytes
 Receive failed. Disconnecting
 ```
 
+## Sending messages to the Pony node from the IEx
+
+```elixir
+$ iex --sname demo@localhost --cookie secretcookie
+iex(demo@localhost)1> {:ok, hostname} = :inet.gethostname
+{:ok, '...'}
+iex(demo@localhost)2>         pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
+{:any, :"pony@..."}
+iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
+{#PID<0.109.0>, "0: Hi!"}
+```
+
 ## Backlog
 
 - spike

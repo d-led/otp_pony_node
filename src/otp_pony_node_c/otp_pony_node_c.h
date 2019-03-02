@@ -35,8 +35,8 @@ OPN_API size_t opn_ei_message_length(opn_ei_message_t *self);
 OPN_API int opn_ei_message_beginning(opn_ei_message_t *self);
 
 OPN_API int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* size);
-
-OPN_API int opn_ei_message_atom_at(opn_ei_message_t *self, int index, char* buffer);
+OPN_API int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer);
+OPN_API int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity);
 
 OPN_API void opn_ei_message_destroy (opn_ei_message_t **self_p);
 
