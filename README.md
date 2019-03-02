@@ -1,14 +1,15 @@
-# WIP
+# Erlang C Node for the Pony Language (spike/WIP)
 
-- build: adjust the Erlang path in [premake5.lua](premake5.lua) &rarr; `./build.sh`
-- demo:
-  - one terminal: `./demo_exs.sh` or open an interactive shell: `iex --sname demo@localhost --cookie secretcookie`
-  - another terminal one: `./otp_pony_node`
+[![Build Status](https://travis-ci.org/d-led/otp_pony_node.svg?branch=master)](https://travis-ci.org/d-led/otp_pony_node)
+
+- build: `./build.sh`
+- demo: `./test.sh`
 
 successful POC:
 
 - messages received
-- graceful handling a failed receive
+- graceful handling of a failed receive
+- parsing the messages (in progress)
 
 ```txt
 $ ./otp_pony_node
@@ -37,7 +38,7 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
   - receive with timeout
   - send/send with timeout
   - destructuring the messages in Pony
-- Travis CI
+- remove the demo executable and treat the project as a library
 - testing strategy
 - reconnects?
 
@@ -64,3 +65,8 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
 
 - simplified meta-build
 - http://premake.github.io [BSD 3-Clause](https://github.com/premake/premake-core/blob/master/LICENSE.txt)
+
+## Development
+
+- Tested on OSX & Linux currently
+- `vagrant up` if you don't want to install the dependencies yourself
