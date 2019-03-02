@@ -51,6 +51,7 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
   - `ei_set_tracelevel`
   - `ei_connect`
   - `ei_xreceive_msg`
+  - [`ei_decode_*`](http://erlang.org/doc/man/ei.html)
 
 ### Pony
 
