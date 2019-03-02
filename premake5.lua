@@ -1,9 +1,20 @@
+-- todo: find latest one installed
+function find_ei()
+    if os.target() == "macosx" then
+        return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
+    end
+
+    if os.target() == "linux" then
+        return "/usr/lib/erlang/lib/erl_interface-3.10.4/"
+    end
+end
+
 -------------------
 workspace "otp_pony_node"
     configurations { "Debug", "Release" }
 
     -- build files location
-    location("build" .. "/" .. os.target() .. "/" .. _ACTION)
+    location("build" .. "/" .. os.target() .. "/" .. (_ACTION or ''))
 
     -- output file locations
     objdir ("obj/%{cfg.system}/%{prj.name}")
@@ -24,9 +35,10 @@ workspace "otp_pony_node"
     
     filter {}
 
-    filter "system:macosx"
+    ei_dir = find_ei()
+
+    filter "system:macosx or system:linux"
         -- todo detect/configure
-        ei_dir = "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
         includedirs {
             ei_dir .. "/include",
         }

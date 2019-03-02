@@ -9,3 +9,5 @@ obj/
 *.pony_
 *.so
 ttb_last_config
+.vagrant/
+*.log
