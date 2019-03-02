@@ -10,16 +10,16 @@ defmodule Demo do
         IO.inspect(pony)
         send(pony, {self(),"#{tries}: Hi!"})
         receive do
-            m -> IO.puts "received: #{m}"
+            m -> IO.puts "elixir: received: #{m}"
         after
             3_000 ->
-                IO.puts "nobody sent anything, continuing"
+                IO.puts "elixir: nobody sent anything, continuing"
         end
 
         run(tries - 1)
     end
 end
 
-IO.puts("this process: #{inspect(self())})")
+IO.puts("elixir: this process: #{inspect(self())})")
 
 Demo.run()
