@@ -19,6 +19,7 @@ esac
 ./premake/${os}/premake5 gmake
 
 # compile the C part
+rm -f libotp_pony_node_c.so
 make -C build/${os}/gmake config=debug
 
 # compile the Pony part

@@ -9,7 +9,7 @@ cache:
  - apt
 
 install:
- - sudo ./tarvis_install.sh
+ - sudo ./travis_install.sh
 
 script:
   - ./build.sh

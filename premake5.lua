@@ -1,11 +1,21 @@
--- todo: find latest one installed
+function exec(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
 function find_ei()
+    -- installed via Homebrew
     if os.target() == "macosx" then
-        return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
+        -- return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
+        return exec("ls -td -- /usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-*/ | head -n 1")
     end
 
+    -- installed via official instructions
     if os.target() == "linux" then
-        return "/usr/lib/erlang/lib/erl_interface-3.10.4/"
+        -- return "/usr/lib/erlang/lib/erl_interface-3.10.4/"
+        return exec("ls -td -- /usr/lib/erlang/lib/erl_interface-*/ | head -n 1")
     end
 end
 
@@ -35,7 +45,9 @@ workspace "otp_pony_node"
     
     filter {}
 
-    ei_dir = find_ei()
+    ei_dir = find_ei():gsub("^%s*(.-)%s*$", "%1")
+
+    print("ei_dir: "..ei_dir)
 
     filter "system:macosx or system:linux"
         -- todo detect/configure
