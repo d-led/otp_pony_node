@@ -1,0 +1,17 @@
+dist: xenial
+sudo: true
+language: cpp
+
+compiler:
+  - gcc
+
+cache:
+ - apt
+
+install:
+ - ./tarvis_install.sh
+
+script:
+  - ./build.sh
+  - ./test.sh
+  - killall beam.smp || true
