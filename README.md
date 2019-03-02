@@ -26,7 +26,7 @@ Receive failed. Disconnecting
 $ iex --sname demo@localhost --cookie secretcookie
 iex(demo@localhost)1> {:ok, hostname} = :inet.gethostname
 {:ok, '...'}
-iex(demo@localhost)2>         pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
+iex(demo@localhost)2> pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
 {:any, :"pony@..."}
 iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
 {#PID<0.109.0>, "0: Hi!"}
