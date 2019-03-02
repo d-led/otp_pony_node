@@ -59,7 +59,16 @@ opn_ei_message_t * opn_ei_receive (opn_ei_t *self, int connection_id)
     if (!m)
         return nullptr;
 
-    int res = ei_xreceive_msg(connection_id, &m->msg, &m->buff);
+    int res = 0;
+
+    // skip tick messages
+    do {
+        res = ei_xreceive_msg(connection_id, &m->msg, &m->buff);
+		if (res < 0) {
+            opn_ei_message_destroy(&m);
+            return nullptr;
+        }
+    } while (res == ERL_TICK) ;
 
     // todo: complex protocol handling & returning the message appropriately
 
@@ -97,6 +106,18 @@ size_t opn_ei_message_length(opn_ei_message_t *self)
 {
     assert(self);
     return self->buff.buffsz;
+}
+
+int opn_ei_message_beginning(opn_ei_message_t *self)
+{
+    assert(self);
+    int index = 0;
+    int version = 0;
+    if (ei_decode_version(self->buff.buff, &index, &version) < 0)
+        // should not have failed, just return the absolute beginning
+        return 0;
+
+    return index;
 }
 
 int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* size)

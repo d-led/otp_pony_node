@@ -16,35 +16,45 @@ actor PonyNode
         let connected = erl.connect("demo@localhost")
         match connected
         | ConnectionFailed => 
-          _env.out.print("Connection failed. Exiting")
-          return
+            _env.out.print("Connection failed. Exiting")
+            return
         | ConnectionSucceeded =>
-          _env.out.print("Connection successful")
+            _env.out.print("Connection successful")
         end
 
-        while true do  
-          // todo: receive with timeout
-          let receved = erl.receive()
-          match receved
-          | ReceiveFailed =>
+        receive_loop()
+
+    be receive_loop() =>
+        // todo: receive with timeout
+        let receved = erl.receive()
+        match receved
+        | ReceiveFailed =>
             _env.out.print("Receive failed. Disconnecting")
-            break
-          // todo: full message
-          | let m: EMessage =>
-            _env.out.print("Received: " + m.length().string() + "bytes")
-              (let a, let s) = m.atom_at(m.header_size)
-              match a
-              | let text: String =>
-                _env.out.print("First atom: " + text)
-              else
-                _env.out.print("Expected an atom, but failed")
-              end
-          end
+            erl.disconnect()
+            return
+        | let m: EMessage =>
+            handle_message(m)
         end
 
-        erl.disconnect()
-
-
+        // until failure
+        receive_loop()
+    
+    fun print_string_or_none(a: (String | None), s: I32) =>
+      match a
+        | let text: String =>
+          _env.out.print("atom["+ s.string() + "]: " + text)
+        else
+          _env.out.print("Expected a string...:(")
+        end
+    
+    fun handle_message(m: EMessage ref) =>
+      _env.out.print("Received: " + m.length().string() + "bytes")
+      m.debug_type_at(m.beginning)
+      // (var a, var s) = m.atom_at(m.header_size)
+      // print_string_or_none(a, s)
+      // (a, s) = m.atom_at(m.header_size + s)
+      // print_string_or_none(a, s)
+      // m.debug_type_at(m.header_size + s + s)
 
 actor Main
   new create(env: Env) =>

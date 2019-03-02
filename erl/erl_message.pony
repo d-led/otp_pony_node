@@ -3,10 +3,11 @@ use "debug"
 
 class EMessage
     var _message: Pointer[None]
-    let header_size: I32 = 4 // message header size
+    let beginning: I32 // after the message header size
 
     new create(message': Pointer[None]) =>
         _message = message'
+        beginning = @opn_ei_message_beginning[I32](_message)
 
     fun ref length(): USize =>
         @opn_ei_message_length[USize](_message)
@@ -16,6 +17,8 @@ class EMessage
         var type': U8 = 0
         var size': I32 = 0
         let res = @opn_ei_message_type_at[I32](_message, pos, addressof type', addressof size')
+
+        Debug.out("p:"+pos.string()+" t:"+type'.string()+" s:"+size'.string())
 
         if res != 0 then
             return (TermType.none(), 0)
@@ -40,6 +43,65 @@ class EMessage
         end
 
         (String.from_array(buffer), s)
+
+    fun ref debug_type_at(pos: I32) =>
+        (let t, let s) = type_at(pos)
+        match t
+        | TermType.t_ERL_SMALL_INTEGER_EXT() =>
+            Debug.out(pos.string()+": ERL_SMALL_INTEGER " + s.string() + "bytes")
+        | TermType.t_ERL_INTEGER_EXT() =>
+            Debug.out(pos.string()+": ERL_INTEGER " + s.string() + "bytes")
+        | TermType.t_ERL_FLOAT_EXT() =>
+            Debug.out(pos.string()+": ERL_FLOAT " + s.string() + "bytes")
+        | TermType.t_NEW_FLOAT_EXT() =>
+            Debug.out(pos.string()+": NEW_FLOAT " + s.string() + "bytes")
+        | TermType.t_ERL_ATOM_EXT() =>
+            Debug.out(pos.string()+": ERL_ATOM " + s.string() + "bytes")
+        | TermType.t_ERL_SMALL_ATOM_EXT() =>
+            Debug.out(pos.string()+": ERL_SMALL_ATOM " + s.string() + "bytes")
+        | TermType.t_ERL_ATOM_UTF8_EXT() =>
+            Debug.out(pos.string()+": ERL_ATOM_UTF8 " + s.string() + "bytes")
+        | TermType.t_ERL_SMALL_ATOM_UTF8_EXT() =>
+            Debug.out(pos.string()+": ERL_SMALL_ATOM_UTF8 " + s.string() + "bytes")
+        | TermType.t_ERL_REFERENCE_EXT() =>
+            Debug.out(pos.string()+": ERL_REFERENCE " + s.string() + "bytes")
+        | TermType.t_ERL_NEW_REFERENCE_EXT() =>
+            Debug.out(pos.string()+": ERL_NEW_REFERENCE " + s.string() + "bytes")
+        | TermType.t_ERL_NEWER_REFERENCE_EXT() =>
+            Debug.out(pos.string()+": ERL_NEWER_REFERENCE " + s.string() + "bytes")
+        | TermType.t_ERL_PORT_EXT() =>
+            Debug.out(pos.string()+": ERL_PORT " + s.string() + "bytes")
+        | TermType.t_ERL_NEW_PORT_EXT() =>
+            Debug.out(pos.string()+": ERL_NEW_PORT " + s.string() + "bytes")
+        | TermType.t_ERL_PID_EXT() =>
+            Debug.out(pos.string()+": ERL_PID " + s.string() + "bytes")
+        | TermType.t_ERL_NEW_PID_EXT() =>
+            Debug.out(pos.string()+": ERL_NEW_PID " + s.string() + "bytes")
+        | TermType.t_ERL_SMALL_TUPLE_EXT() =>
+            Debug.out(pos.string()+": ERL_SMALL_TUPLE " + s.string() + "bytes")
+        | TermType.t_ERL_LARGE_TUPLE_EXT() =>
+            Debug.out(pos.string()+": ERL_LARGE_TUPLE " + s.string() + "bytes")
+        | TermType.t_ERL_NIL_EXT() =>
+            Debug.out(pos.string()+": ERL_NIL " + s.string() + "bytes")
+        | TermType.t_ERL_STRING_EXT() =>
+            Debug.out(pos.string()+": ERL_STRING " + s.string() + "bytes")
+        | TermType.t_ERL_LIST_EXT() =>
+            Debug.out(pos.string()+": ERL_LIST " + s.string() + "bytes")
+        | TermType.t_ERL_BINARY_EXT() =>
+            Debug.out(pos.string()+": ERL_BINARY " + s.string() + "bytes")
+        | TermType.t_ERL_SMALL_BIG_EXT() =>
+            Debug.out(pos.string()+": ERL_SMALL_BIG " + s.string() + "bytes")
+        | TermType.t_ERL_LARGE_BIG_EXT() =>
+            Debug.out(pos.string()+": ERL_LARGE_BIG " + s.string() + "bytes")
+        | TermType.t_ERL_NEW_FUN_EXT() =>
+            Debug.out(pos.string()+": ERL_NEW_FUN " + s.string() + "bytes")
+        | TermType.t_ERL_MAP_EXT() =>
+            Debug.out(pos.string()+": ERL_MAP " + s.string() + "bytes")
+        | TermType.t_ERL_FUN_EXT() =>
+            Debug.out(pos.string()+": ERL_FUN " + s.string() + "bytes")
+        else
+            Debug.out(pos.string()+": Unknown type: " + t.string() + " " + s.string() + "bytes")
+        end
 
     fun _final() =>
         if _message != Pointer[None] then

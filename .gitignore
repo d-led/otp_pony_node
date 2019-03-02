@@ -8,3 +8,4 @@ otp_pony_node
 obj/
 *.pony_
 *.so
+ttb_last_config
