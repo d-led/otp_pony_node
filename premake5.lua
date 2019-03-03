@@ -5,7 +5,14 @@ function exec(command)
     return result
 end
 
+-- This function assumes, the latest Erlang has been the last to have been installed.
+--  If this is not so, make sure, the desired one has the latest modified date.
+--  If a custom ei location is supplied (--ei=<path>), it is returned
 function find_ei()
+    if _OPTIONS["ei"] then
+        return _OPTIONS["ei"]
+    end
+
     -- installed via Homebrew
     if os.target() == "macosx" then
         -- return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
@@ -24,6 +31,11 @@ function find_ei()
         return exec("src\\find_latest_erl_interface\\find_latest_erl_interface")
     end
 end
+
+newoption {
+   trigger     = "ei",
+   description = "Supply a custom path to the erl_interface directory (must include include, lib)"
+}
 
 -------------------
 workspace "otp_pony_node"
