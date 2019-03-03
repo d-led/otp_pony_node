@@ -14,10 +14,19 @@ successful POC:
 ```txt
 $ ./otp_pony_node
 Connection successful
+1: ERL_SMALL_TUPLE 2bytes
+3: ERL_PID 0bytes
+29: ERL_BINARY 6bytes
 Received: 100bytes
+pid: demo@localhost
+atom: 7: Hi!
+1: ERL_SMALL_TUPLE 2bytes
+3: ERL_PID 0bytes
 Received: 100bytes
-Received: 100bytes
-Receive failed. Disconnecting
+pid: demo@localhost
+29: ERL_BINARY 6bytes
+atom: 6: Hi!
+Receive failed. Disconnectin
 ```
 
 ## Sending messages to the Pony node from the IEx
