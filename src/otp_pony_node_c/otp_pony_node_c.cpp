@@ -82,6 +82,37 @@ opn_ei_message_t * opn_ei_receive (opn_ei_t *self, int connection_id)
     return m;
 }
 
+opn_ei_message_t * opn_ei_receive_tmo(opn_ei_t *self, int connection_id, unsigned int ms, int* timed_out)
+{
+    assert(self);
+    assert(timed_out);
+
+    opn_ei_message_t * m = opn_ei_new_message();
+    if (!m)
+        return nullptr;
+
+    int res = 0;
+
+    // skip tick messages
+    do {
+        res = ei_xreceive_msg_tmo(connection_id, &m->msg, &m->buff, ms);
+        if (res < 0) {
+            opn_ei_message_destroy(&m);
+            *timed_out = erl_errno == ETIMEDOUT;
+            return nullptr;
+        }
+    } while (res == ERL_TICK);
+
+    // todo: complex protocol handling & returning the message appropriately
+
+    if (res < 0) {
+        opn_ei_message_destroy(&m);
+        return nullptr;
+    }
+
+    return m;
+}
+
 opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation)
 {
     try

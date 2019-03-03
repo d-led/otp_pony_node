@@ -81,7 +81,13 @@ workspace "otp_pony_node"
         }
         buildoptions {
             "/NODEFAULTLIB",
-            "/MT"
+            "/MT",
+        }
+        linkoptions {
+            "/WHOLEARCHIVE"
+        }
+        defines {
+            "__WIN32__"
         }
     filter {}
 
