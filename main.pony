@@ -39,18 +39,18 @@ actor PonyNode
         // until failure
         receive_loop()
     
-    fun print_string_or_none(a: (String | None), s: I32) =>
+    fun print_string_or_none(a: (String | None)) =>
       match a
         | let text: String =>
-          _env.out.print("atom["+ s.string() + "]: " + text)
+          _env.out.print("atom: " + text)
         else
           _env.out.print("Expected a string...:(")
         end
 
-    fun print_pid_or_none(a: (ErlangPid | None), s: I32) =>
+    fun print_pid_or_none(a: (ErlangPid | None)) =>
       match a
         | let p: ErlangPid =>
-          _env.out.print("pid["+ s.string() + "]: " + p.node)
+          _env.out.print("pid: " + p.node)
         else
           _env.out.print("Expected a Pid...:(")
         end
@@ -66,8 +66,10 @@ actor PonyNode
       end
       m.debug_type_at(pos)
       (var pid, pos) = m.pid_at(pos)
-      print_pid_or_none(pid, pos)
+      print_pid_or_none(pid)
       m.debug_type_at(pos)
+      (let msg, pos) = m.binary_at(pos)
+      print_string_or_none(msg)
 
 actor Main
   new create(env: Env) =>

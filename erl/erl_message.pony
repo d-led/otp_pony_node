@@ -45,6 +45,29 @@ class EMessage
 
         (String.from_array(buffer), index)
 
+    // returns string or nothing, and the next position
+    fun ref binary_at(pos: I32): ((String | None), I32) =>
+        (let t, let s) = type_at(pos)
+        if t != TermType.t_ERL_BINARY_EXT() then
+            return (None, 0)
+        end
+
+        let buffer: Array[U8] val = recover Array[U8].init(0, s.usize() + 1 /*null*/) end
+
+        var index: I32 = pos
+        var read_bytes: I64 = 0
+        let res = @opn_ei_message_binary_at[I32](_message, addressof index, buffer.cpointer(), addressof read_bytes)
+
+        if res < 0 then
+            return (None, 0)
+        end
+
+        if read_bytes != s.i64() then
+            Debug.out("binary_at: size mismatch "+read_bytes.string()+"!="+s.string())
+        end
+
+        (_null_trimmed(buffer), index)
+
     // returns (None, 0) if not a Pid
     // otherwise: arity, next position
     fun ref pid_at(pos: I32): ((ErlangPid val | None), I32) =>
@@ -65,17 +88,17 @@ class EMessage
             return (None, 0)
         end
 
+        let pid: ErlangPid val = recover ErlangPid(_null_trimmed(buffer), num, serial, creation) end
+        (pid, index)
+        
+    fun _null_trimmed(buffer: Array[U8] val): String val^ =>
         try
             // try trimming the extra null terminators
-            let trimmed_pid: Array[U8] val = recover buffer.slice(0, buffer.find(0)?) end
-            let name = String.from_array(trimmed_pid)
-            let pid: ErlangPid val = recover ErlangPid(name, num, serial, creation) end
-            (pid, index)
+            let trimmed: Array[U8] val = recover buffer.slice(0, buffer.find(0)?) end
+            String.from_array(trimmed)
         else
-            let pid: ErlangPid val = recover ErlangPid(String.from_array(buffer), num, serial, creation) end
-            (pid, index)
+            String.from_array(buffer)
         end
-        
 
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position
