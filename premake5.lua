@@ -17,6 +17,12 @@ function find_ei()
         -- return "/usr/lib/erlang/lib/erl_interface-3.10.4/"
         return exec("ls -td -- /usr/lib/erlang/lib/erl_interface-*/ | head -n 1")
     end
+
+    -- installed via official instructions / chocolatey
+    if os.target() == "windows" then
+        -- return "C:\Program Files\erl10.1\lib\erl_interface-3.10.4\"
+        return exec("src\\find_latest_erl_interface\\find_latest_erl_interface")
+    end
 end
 
 -------------------
@@ -58,6 +64,22 @@ workspace "otp_pony_node"
             ei_dir .. "/lib",
         }
         targetextension ".so"
+
+    filter "system:windows"
+        -- todo detect/configure
+        includedirs {
+            ei_dir .. "\\include",
+        }
+        libdirs {
+            ei_dir .. "\\lib",
+        }
+        links {
+            "ws2_32.lib"
+        }
+        buildoptions {
+            "/NODEFAULTLIB",
+            "/MT"
+        }
     filter {}
 
     -------------

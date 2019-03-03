@@ -11,3 +11,6 @@ obj/
 ttb_last_config
 .vagrant/
 *.log
+*.tmp
+otp_pony_node_c.dll
+!src\find_latest_erl_interface\find_latest_erl_interface.exe

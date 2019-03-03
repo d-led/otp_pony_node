@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/d-led/otp_pony_node.svg?branch=master)](https://travis-ci.org/d-led/otp_pony_node)
 
-- build: `./build.sh`
+- build: OSX, Linux: `./build.sh`, Windows: `build.bat`
 - demo: `./test.sh`
 
 successful POC:
@@ -27,6 +27,20 @@ pid: demo@localhost
 29: ERL_BINARY 6bytes
 atom: 6: Hi!
 Receive failed. Disconnectin
+```
+
+windows (release mode, messages sent from iex):
+
+```txt
+D:\src\otp_pony_node>otp_pony_node.exe
+Connection successful
+Received: 100bytes
+pid: demo@localhost
+atom: 0: Hi!
+Received: 100bytes
+pid: demo@localhost
+atom: 1: Hi!
+Receive failed. Disconnecting
 ```
 
 ## Sending messages to the Pony node from the IEx
