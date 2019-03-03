@@ -57,29 +57,8 @@ opn_ei_message_t * opn_ei_receive (opn_ei_t *self, int connection_id)
 {
     assert(self);
 
-    opn_ei_message_t * m = opn_ei_new_message();
-    if (!m)
-        return nullptr;
-
-    int res = 0;
-
-    // skip tick messages
-    do {
-        res = ei_xreceive_msg(connection_id, &m->msg, &m->buff);
-		if (res < 0) {
-            opn_ei_message_destroy(&m);
-            return nullptr;
-        }
-    } while (res == ERL_TICK) ;
-
-    // todo: complex protocol handling & returning the message appropriately
-
-    if (res < 0) {
-        opn_ei_message_destroy(&m);
-        return nullptr;
-    }
-
-    return m;
+    int timed_out = 0;
+    return opn_ei_receive_tmo(self, connection_id, 0, &timed_out);
 }
 
 opn_ei_message_t * opn_ei_receive_tmo(opn_ei_t *self, int connection_id, unsigned int ms, int* timed_out)
@@ -95,7 +74,12 @@ opn_ei_message_t * opn_ei_receive_tmo(opn_ei_t *self, int connection_id, unsigne
 
     // skip tick messages
     do {
-        res = ei_xreceive_msg_tmo(connection_id, &m->msg, &m->buff, ms);
+        if (ms!=0) {
+            res = ei_xreceive_msg_tmo(connection_id, &m->msg, &m->buff, ms);
+        } else {
+            res = ei_xreceive_msg(connection_id, &m->msg, &m->buff);
+        }
+
         if (res < 0) {
             opn_ei_message_destroy(&m);
             *timed_out = erl_errno == ETIMEDOUT;
