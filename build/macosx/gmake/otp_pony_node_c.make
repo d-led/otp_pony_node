@@ -23,7 +23,7 @@ ifeq ($(config),debug)
   TARGETDIR = ../../..
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/macosx/otp_pony_node_c/Debug
-  DEFINES += -DBUILDING_OPN_API
+  DEFINES += -D_REENTRANT -DBUILDING_OPN_API
   INCLUDES += -I/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
@@ -58,7 +58,7 @@ ifeq ($(config),release)
   TARGETDIR = ../../..
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/macosx/otp_pony_node_c/Release
-  DEFINES += -DBUILDING_OPN_API
+  DEFINES += -D_REENTRANT -DBUILDING_OPN_API
   INCLUDES += -I/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
