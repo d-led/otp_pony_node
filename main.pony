@@ -46,6 +46,14 @@ actor PonyNode
         else
           _env.out.print("Expected a string...:(")
         end
+
+    fun print_pid_or_none(a: (ErlangPid | None), s: I32) =>
+      match a
+        | let p: ErlangPid =>
+          _env.out.print("pid["+ s.string() + "]: " + p.node)
+        else
+          _env.out.print("Expected a Pid...:(")
+        end
     
     fun handle_message(m: EMessage ref) =>
       _env.out.print("Received: " + m.length().string() + "bytes")
@@ -56,10 +64,10 @@ actor PonyNode
         _env.out.print("Didn't expect tuple arity of " + arity.string())
         return
       end
-      // print_string_or_none(a, s)
-      // (a, s) = m.atom_at(m.header_size + s)
-      // print_string_or_none(a, s)
-      // m.debug_type_at(m.header_size + s + s)
+      m.debug_type_at(pos)
+      (var pid, pos) = m.pid_at(pos)
+      print_pid_or_none(pid, pos)
+      m.debug_type_at(pos)
 
 actor Main
   new create(env: Env) =>

@@ -38,9 +38,10 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
   - receive with timeout
   - send/send with timeout
   - destructuring the messages in Pony
-- remove the demo executable and treat the project as a library
 - testing strategy
-- reconnects?
+- remove the double term type checking in decode functions after testing is in place
+- remove the demo executable and treat the project as a library
+- reconnects / actor interface design?
 
 ## Dependencies
 

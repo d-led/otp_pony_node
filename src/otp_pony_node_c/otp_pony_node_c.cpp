@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cassert>
 #include <string>
+#include <algorithm>
 
 void opn_set_tracelevel(int level)
 {
@@ -144,6 +145,29 @@ int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity
     assert(arity);
 
     return ei_decode_tuple_header(self->buff.buff, index, arity);
+}
+
+int opn_ei_message_pid_at(opn_ei_message_t *self, int* index, char* buffer, unsigned int* num, unsigned int* serial_, unsigned int* creation)
+{
+    assert(self);
+    assert(index);
+    assert(buffer);
+    assert(serial_);
+    assert(creation);
+
+    erlang_pid pid;
+    int res = ei_decode_pid(self->buff.buff, index, &pid);
+
+    if (res < 0)
+        return res;
+
+    // both should have been null-terminated
+    strcpy(buffer, pid.node);
+
+    *num = pid.num;
+    *serial_ = pid.serial;
+    *creation = pid.creation;
+    return 0;
 }
 
 void opn_ei_destroy(opn_ei_t **self_p)

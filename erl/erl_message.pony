@@ -45,6 +45,38 @@ class EMessage
 
         (String.from_array(buffer), index)
 
+    // returns (None, 0) if not a Pid
+    // otherwise: arity, next position
+    fun ref pid_at(pos: I32): ((ErlangPid val | None), I32) =>
+        (let t, let s) = type_at(pos)
+        if t != TermType.t_ERL_PID_EXT() then
+            return (None, 0)
+        end
+
+        let buffer: Array[U8] val = recover Array[U8].init(0, /*MAXATOMLEN_UTF8*/ (255*4) + 1 /*null*/) end
+
+        var index: I32 = pos
+        var num: U32 = 0
+        var serial: U32 = 0
+        var creation: U32 = 0
+        let res = @opn_ei_message_pid_at[I32](_message, addressof index, buffer.cpointer(), addressof num, addressof serial, addressof creation)
+
+        if res < 0 then
+            return (None, 0)
+        end
+
+        try
+            // try trimming the extra null terminators
+            let trimmed_pid: Array[U8] val = recover buffer.slice(0, buffer.find(0)?) end
+            let name = String.from_array(trimmed_pid)
+            let pid: ErlangPid val = recover ErlangPid(name, num, serial, creation) end
+            (pid, index)
+        else
+            let pid: ErlangPid val = recover ErlangPid(String.from_array(buffer), num, serial, creation) end
+            (pid, index)
+        end
+        
+
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position
     fun ref tuple_arity_at(pos: I32): (I32, I32) =>
@@ -61,7 +93,7 @@ class EMessage
             return (-1, 0)
         end
 
-        (arity, index)    
+        (arity, index)
 
     fun ref debug_type_at(pos: I32) =>
         (let t, let s) = type_at(pos)
