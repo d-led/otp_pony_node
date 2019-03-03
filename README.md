@@ -107,6 +107,7 @@ m.debug_type_at(pos)
 - remove the double term type checking in decode functions after testing is in place
 - remove the demo executable and treat the project as a library
 - reconnects / actor interface design?
+- multiple connections per `EInterface`
 
 ## Development
 
