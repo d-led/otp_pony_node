@@ -1,7 +1,7 @@
-use "erl"
+use "../erl_interface_pony"
 use "debug"
 
-use "path:./"
+use "path:../"
 
 actor PonyNode
     let _env : Env

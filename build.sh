@@ -23,7 +23,7 @@ rm -f libotp_pony_node_c.so
 make -C build/${os}/gmake config=debug
 
 # compile the Pony part
-ponyc -d -b otp_pony_node
+ponyc demo -d -b ../otp_pony_node
 
 if [ "$os" == "macosx" ]; then
     install_name_tool -change "@rpath/libotp_pony_node_c.so" "@loader_path/libotp_pony_node_c.so" otp_pony_node
