@@ -49,6 +49,24 @@ class EInterface
         
         EMessage(message_p)
 
+    fun ref receive_with_timeout(timeout_ms: U32): (EMessage | ReceiveFailed | ReceiveTimedOut) =>
+        if _connection_id < 0 then
+            return ReceiveFailed
+        end
+
+        var timed_out: I32 = 0
+        let message_p = @opn_ei_receive_tmo[Pointer[None]](_connection, _connection_id, timeout_ms, addressof timed_out)
+
+        if timed_out != 0 then
+            return ReceiveTimedOut
+        end
+
+        if message_p == Pointer[None] then
+            return ReceiveFailed
+        end
+        
+        EMessage(message_p)
+
     fun ref disconnect() =>
         if not connected() then 
             return

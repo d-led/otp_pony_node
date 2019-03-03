@@ -27,6 +27,7 @@ OPN_API opn_ei_t * opn_ei_new (const char* this_nodename, const char* cookie, in
 OPN_API int opn_ei_connect (opn_ei_t *self, const char* nodename);
 
 OPN_API opn_ei_message_t * opn_ei_receive (opn_ei_t *self, int connection_id);
+OPN_API opn_ei_message_t * opn_ei_receive_tmo(opn_ei_t *self, int connection_id, unsigned int ms, int* timed_out);
 
 OPN_API void opn_ei_destroy (opn_ei_t **self_p);
 

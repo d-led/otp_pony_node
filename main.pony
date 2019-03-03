@@ -26,10 +26,14 @@ actor PonyNode
 
     be receive_loop() =>
         // todo: receive with timeout
-        let receved = erl.receive()
+        let receved = erl.receive_with_timeout(5_000/*ms*/)
         match receved
         | ReceiveFailed =>
             _env.out.print("Receive failed. Disconnecting")
+            erl.disconnect()
+            return
+        | ReceiveTimedOut =>
+            _env.out.print("Receive timed out. Disconnecting")
             erl.disconnect()
             return
         | let m: EMessage =>
