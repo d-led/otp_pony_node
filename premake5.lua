@@ -63,6 +63,9 @@ workspace "otp_pony_node"
         libdirs {
             ei_dir .. "/lib",
         }
+        defines {
+            "_REENTRANT"
+        }
         targetextension ".so"
 
     filter "system:windows"
