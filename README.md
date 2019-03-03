@@ -57,10 +57,7 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
 
 ## Backlog
 
-- spike
-  - receive with timeout
-  - send/send with timeout
-  - destructuring the messages in Pony
+- send (with timeout)
 - testing strategy
 - remove the double term type checking in decode functions after testing is in place
 - remove the demo executable and treat the project as a library
