@@ -82,7 +82,7 @@ match erl.receive_with_timeout(5_000/*ms*/)
     handle_message(m)
 end
 
-// parsing the message (linearly)
+// handle_message: parsing the message linearly
 (var arity, var pos) = m.tuple_arity_at(m.beginning)
 if arity != 2 then
     _env.out.print("Didn't expect tuple arity of " + arity.string())
