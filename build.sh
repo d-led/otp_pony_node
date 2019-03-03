@@ -22,6 +22,9 @@ esac
 rm -f libotp_pony_node_c.so
 make -C build/${os}/gmake config=debug
 
+echo "pony"
+ponyc --version
+
 # compile the Pony part
 ponyc demo -d -b otp_pony_node
 

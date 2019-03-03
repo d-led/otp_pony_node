@@ -9,6 +9,9 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 msbuild build\windows\vs2013\otp_pony_node.sln /t:Build /p:Configuration=Release
 if %errorlevel% neq 0 exit /b %errorlevel%
 
+echo pony
+ponyc --version
+
 rem debug for now
 ponyc demo -d
 if %errorlevel% neq 0 exit /b %errorlevel%
