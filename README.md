@@ -63,6 +63,19 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
 - remove the demo executable and treat the project as a library
 - reconnects / actor interface design?
 
+## Development
+
+- Linux, OSX, Windows build config via Premake
+- `vagrant up` if you don't want to install the dependencies yourself
+
+### Source Structure
+
+- [erl_interface_pony](erl_interface_pony) the Pony API to `ei_connect`
+- [src/otp_pony_node_c](src/otp_pony_node_c) - a slim wrapper around `ei_connect` (see below)
+- [demo](demo) a Pony "main" spike used to get familiar with the `ei_connect` API and bootstrap the project: connects to an Erlang node and awaits message tuples
+- [demo.exs](demo.exs) the OTP/Elixir counterpart to the Pony demo, which sends the expected messages
+- [build](build) build config generated via premake from [premake5.lua](premake5.lua)
+
 ## Dependencies
 
 ### ei_connect
@@ -87,8 +100,3 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
 
 - simplified meta-build
 - http://premake.github.io [BSD 3-Clause](https://github.com/premake/premake-core/blob/master/LICENSE.txt)
-
-## Development
-
-- Tested on OSX & Linux currently
-- `vagrant up` if you don't want to install the dependencies yourself
