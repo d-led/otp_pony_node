@@ -6,6 +6,7 @@
 #include <cassert>
 #include <string>
 #include <algorithm>
+#include <cstring>
 
 void opn_set_tracelevel(int level)
 {
@@ -136,6 +137,16 @@ int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer)
     assert(index);
 
     return ei_decode_atom(self->buff.buff, index, buffer);
+}
+
+int opn_ei_message_binary_at(opn_ei_message_t *self, int* index, char* buffer, long* len)
+{
+    assert(self);
+    assert(buffer);
+    assert(index);
+    assert(len);
+
+    return ei_decode_binary(self->buff.buff, index, buffer, len);
 }
 
 int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity)
