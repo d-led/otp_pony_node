@@ -91,9 +91,11 @@ end
 
 // print the term type of the token at pos
 m.debug_type_at(pos)
+
 (var pid, pos) = m.pid_at(pos)
 // do something with pid ...
 
+// pos is mutable and gets updated after each successful token parsed
 (let msg, pos) = m.binary_at(pos)
 // do something with msg
 ```
