@@ -55,6 +55,49 @@ iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
 {#PID<0.109.0>, "0: Hi!"}
 ```
 
+## Current API Preview
+
+```pony
+// connecting
+let erl = EInterface("pony", "secretcookie")
+match erl.connect("demo@localhost")
+| ConnectionFailed => 
+    _env.out.print("Connection failed. Exiting")
+    return
+| ConnectionSucceeded =>
+    _env.out.print("Connection successful")
+end
+
+// receiving a message
+match erl.receive_with_timeout(5_000/*ms*/)
+| ReceiveFailed =>
+    _env.out.print("Receive failed. Disconnecting")
+    erl.disconnect()
+    return
+| ReceiveTimedOut =>
+    _env.out.print("Receive timed out. Disconnecting")
+    erl.disconnect()
+    return
+| let m: EMessage =>
+    handle_message(m)
+end
+
+// parsing the message (linearly)
+(var arity, var pos) = m.tuple_arity_at(m.beginning)
+if arity != 2 then
+    _env.out.print("Didn't expect tuple arity of " + arity.string())
+    return
+end
+
+// print the term type of the token at pos
+m.debug_type_at(pos)
+(var pid, pos) = m.pid_at(pos)
+// do something with pid ...
+
+(let msg, pos) = m.binary_at(pos)
+// do something with msg
+```
+
 ## Backlog
 
 - send (with timeout)
