@@ -2,6 +2,33 @@
 
 [![Build Status](https://travis-ci.org/d-led/otp_pony_node.svg?branch=master)](https://travis-ci.org/d-led/otp_pony_node)
 
+## Motivation
+
+While different [Actor Model](https://www.brianstorti.com/the-actor-model/) implementations may differ in many details,
+transferring the knowledge and design considerations between them is not too hard. An Actor is a unit of concurrency,
+and processes its messages synchronously. A run-time that includes a scheduler and some form of mailboxes
+for the Actors makes sure, the CPU is utilized as desired (which may vary from implementation to implementation).
+Concurrent and distributed software 
+not written with the Actor Model implementation [needs to solve problems]( http://rvirding.blogspot.com/2008/01/virdings-first-rule-of-programming.html), such as safe distribution and scheduling of work onto CPUs/cores,
+granularity of the scheduled computations, work interruption, resource clean-up, fault-tolerance.
+
+Pony and the BEAM (Erlang/Elixir/others) have different design goals and give different guarantees.
+In a project, where the benefits of both need to be utilized, it might be beneficial to simply partition the problem,
+and solve each problem with a dedicated Actor Model implementation. Depending on the use-case and the boundary conditions,
+a different communication channel between the parts of the application can be chosen. This project attempts to provide
+an option to write [Erlang C Nodes]( http://erlang.org/doc/man/ei_connect.html) in Pony to exchange messages between
+the two run-times the Erlang way. There are other options, of course,
+e.g. via ZeroMQ or any other appropriate transport available to both technologies.
+
+A particular sweet spot for Pony is its [built-in FFI](https://tutorial.ponylang.io/c-ffi.html) that doesn’t require
+an extra build system or config, given a shared library can be found. The BEAM has another sweet-spot,
+as it can isolate the failures, timeouts and deadlocks of native code [by means]( http://erlang.org/doc/reference_manual/ports.html)
+of starting native code in another OS process and treating a handle to it as a process (Actor).
+Given a Pony C Node process, connected to a parent Erlang process, utilizing existing native libraries can be simplified without giving up the Actor Model.
+
+
+## POC
+
 - build: OSX, Linux: `./build.sh`, Windows: `build.bat`
 - demo: `./test.sh`
 
@@ -26,7 +53,7 @@ Received: 100bytes
 pid: demo@localhost
 29: ERL_BINARY 6bytes
 atom: 6: Hi!
-Receive failed. Disconnectin
+Receive failed. Disconnecting
 ```
 
 windows (release mode, messages sent from iex):
@@ -102,10 +129,15 @@ m.debug_type_at(pos)
 
 ## Backlog
 
-- send (with timeout)
+- expand the API coverage
+  - create messages
+  - send (with timeout)
+  - conform to the C Node protocol
+- higher level API
+  - message builder & reader (hiding away current position)
 - testing strategy
 - remove the double term type checking in decode functions after testing is in place
-- remove the demo executable and treat the project as a library
+- treat and test the project as a library
 - reconnects / actor interface design?
 - multiple connections per `EInterface`
 
