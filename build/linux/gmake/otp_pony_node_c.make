@@ -16,7 +16,7 @@ ifeq ($(config),debug)
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/linux/otp_pony_node_c/Debug
   DEFINES += -D_REENTRANT -DBUILDING_OPN_API
-  INCLUDES += -I/usr/lib/erlang/lib/erl_interface-3.10.4/include
+  INCLUDES += -I/usr/lib/erlang/lib/erl_interface-3.11/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -fPIC -g -std=c++11
@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lei
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib/erlang/lib/erl_interface-3.10.4/lib -L/usr/lib64 -m64 -shared -Wl,-soname=libotp_pony_node_c.so -std=c++11
+  ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib/erlang/lib/erl_interface-3.11/lib -L/usr/lib64 -m64 -shared -Wl,-soname=libotp_pony_node_c.so -std=c++11
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -43,7 +43,7 @@ ifeq ($(config),release)
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/linux/otp_pony_node_c/Release
   DEFINES += -D_REENTRANT -DBUILDING_OPN_API
-  INCLUDES += -I/usr/lib/erlang/lib/erl_interface-3.10.4/include
+  INCLUDES += -I/usr/lib/erlang/lib/erl_interface-3.11/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fPIC -g -std=c++11
@@ -51,7 +51,7 @@ ifeq ($(config),release)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lei
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib/erlang/lib/erl_interface-3.10.4/lib -L/usr/lib64 -m64 -shared -Wl,-soname=libotp_pony_node_c.so -std=c++11
+  ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib/erlang/lib/erl_interface-3.11/lib -L/usr/lib64 -m64 -shared -Wl,-soname=libotp_pony_node_c.so -std=c++11
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
