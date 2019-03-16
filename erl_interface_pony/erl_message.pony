@@ -76,7 +76,7 @@ class EMessage
             return (None, 0)
         end
 
-        (_null_trimmed(buffer), index)
+        (Strings.null_trimmed(buffer), index)
 
     fun ref encode_binary(what: String): I32 =>
         @opn_ei_message_encode_binary[I32](_message, what.cpointer(), what.size())
@@ -106,7 +106,7 @@ class EMessage
             Debug.out("binary_at: size mismatch "+read_bytes.string()+"!="+s.string())
         end
 
-        (_null_trimmed(buffer), index)
+        (Strings.null_trimmed(buffer), index)
 
     fun ref encode_pid(pid: ErlangPid): I32 =>
         @opn_ei_message_encode_pid[I32](_message, pid.cpointer())
@@ -135,17 +135,9 @@ class EMessage
             return (None, 0)
         end
 
-        let pid: ErlangPid val = recover ErlangPid(_null_trimmed(buffer), num, serial, creation) end
+        let pid: ErlangPid val = recover ErlangPid(Strings.null_trimmed(buffer), num, serial, creation) end
         (pid, index)
-        
-    fun _null_trimmed(buffer: Array[U8] val): String val^ =>
-        try
-            // try trimming the extra null terminators
-            let trimmed: Array[U8] val = recover buffer.slice(0, buffer.find(0)?) end
-            String.from_array(trimmed)
-        else
-            String.from_array(buffer)
-        end
+
 
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position
