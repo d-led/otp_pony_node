@@ -47,7 +47,7 @@ class EInterface
             return ReceiveFailed
         end
         
-        EMessage(message_p)
+        EMessage.from_cpointer(message_p)
 
     fun ref receive_with_timeout(timeout_ms: U32): (EMessage | ReceiveFailed | ReceiveTimedOut) =>
         if _connection_id < 0 then
@@ -65,7 +65,7 @@ class EInterface
             return ReceiveFailed
         end
         
-        EMessage(message_p)
+        EMessage.from_cpointer(message_p)
 
     fun ref disconnect() =>
         if not connected() then 

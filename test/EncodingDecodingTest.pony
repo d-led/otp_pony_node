@@ -11,7 +11,7 @@ class iso _ConstructingMessageFromNullPtr is UnitTest
   fun name(): String => "constructing a messsage from a null pointer should not crash the program"
 
   fun apply(h: TestHelper) =>
-    let bad_message = EMessage.create(Pointer[None])
+    let bad_message = EMessage.from_cpointer(Pointer[None])
     h.assert_eq[USize](
         bad_message.length(),
         0

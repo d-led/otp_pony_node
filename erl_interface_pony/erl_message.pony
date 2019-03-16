@@ -5,7 +5,7 @@ class EMessage
     var _message: Pointer[None]
     let beginning: I32 // after the message header size
 
-    new create(message': Pointer[None]) =>        
+    new from_cpointer(message': Pointer[None]) =>        
         _message = message'
 
         if message' != Pointer[None] then
