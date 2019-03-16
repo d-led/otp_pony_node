@@ -34,7 +34,7 @@ actor PonyNode
             erl.disconnect()
             return
         | ReceiveTimedOut =>
-            _env.out.print("Pony: eceive timed out. Disconnecting")
+            _env.out.print("Pony: receive timed out. Disconnecting")
             erl.disconnect()
             return
         | let m: EMessage =>
