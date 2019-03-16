@@ -40,6 +40,30 @@ int opn_ei_connect(opn_ei_t *self, const char* nodename)
     return ei_connect(&self->node, (char*)nodename);
 }
 
+// http://erlang.org/doc/man/ei_connect.html#ei_self
+int opn_ei_self_pid(opn_ei_t *self, char* buffer, unsigned int* num, unsigned int* serial_, unsigned int* creation)
+{
+    assert(self);
+    assert(index);
+    assert(buffer);
+    assert(serial_);
+    assert(creation);
+
+    erlang_pid* tmp = ei_self(&self->node);
+    if (!tmp) {
+        // should not have happened
+        return 1;
+    }
+
+    // both should have been null-terminated
+    strcpy(buffer, tmp->node);
+
+    *num = tmp->num;
+    *serial_ = tmp->serial;
+    *creation = tmp->creation;
+    return 0;
+}
+
 opn_ei_message_t * opn_ei_new_message()
 {
     try
@@ -226,6 +250,14 @@ int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity
     assert(arity);
 
     return ei_decode_tuple_header(self->buff.buff, index, arity);
+}
+
+int opn_ei_message_encode_pid(opn_ei_message_t *self, opn_ei_pid_t const* pid)
+{
+    assert(self);
+    assert(pid);
+
+    return ei_x_encode_pid(&self->buff, &pid->pid);
 }
 
 int opn_ei_message_pid_at(opn_ei_message_t *self, int* index, char* buffer, unsigned int* num, unsigned int* serial_, unsigned int* creation)

@@ -42,6 +42,16 @@ class iso _EncodingRoundtripTest is UnitTest
     (var b, read_pos) = m.binary_at(read_pos)
     h.assert_eq[String](b as String, "an Ö test")
 
+    // pids
+    let pid = ErlangPid.create("me@localhost", 1, 2 ,3)
+    h.assert_eq[I32](m.encode_pid(pid), 0)
+    (var p, read_pos) = m.pid_at(read_pos)
+    let pid2 = p as ErlangPid
+    h.assert_eq[String](pid2.node, pid.node)
+    h.assert_eq[U32](pid2.num, pid.num)
+    h.assert_eq[U32](pid2.serial, pid.serial)
+    h.assert_eq[U32](pid2.creation, pid.creation)
+
 
 class iso _ConstructingMessageFromNullPtr is UnitTest
   fun name(): String => "constructing a messsage from a null pointer should not crash the program"

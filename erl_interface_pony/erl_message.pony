@@ -108,6 +108,9 @@ class EMessage
 
         (_null_trimmed(buffer), index)
 
+    fun ref encode_pid(pid: ErlangPid): I32 =>
+        @opn_ei_message_encode_pid[I32](_message, pid.cpointer())
+
     // returns (None, 0) if not a Pid
     // otherwise: arity, next position
     fun ref pid_at(pos: I32): ((ErlangPid | None), I32) =>

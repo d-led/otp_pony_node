@@ -81,8 +81,9 @@ actor PonyNode
         // reply
         _env.out.print("Pony: elixir target: " + p.string())
         let r = EMessage.begin()
+        // r.encode_pid(erl.self_pid())
         _reply_nr = _reply_nr + 1
-        r.encode_atom("hello from Pony " + _reply_nr.string() + "!")
+        r.encode_binary("hello from Pony " + _reply_nr.string() + "!")
         _env.out.print("Pony: sending a reply")
         erl.send_with_timeout(p, r, 500)
       else

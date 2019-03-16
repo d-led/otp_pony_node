@@ -16,6 +16,32 @@ class EInterface
     fun set_tracelevel(level: I32) =>
         @opn_set_tracelevel[None](level)
 
+    fun ref self_pid(): ErlangPid =>
+        let buffer: Array[U8] val = recover Array[U8].init(0, /*MAXATOMLEN_UTF8*/ (255*4) + 1 /*null*/) end
+        var num: U32 = 0
+        var serial: U32 = 0
+        var creation: U32 = 0
+        let res = @opn_ei_self_pid[I32](_connection, buffer.cpointer(), addressof num, addressof serial, addressof creation)
+
+        if res != 0 then
+            // todo: strategy on failure
+            Debug.out("self_pid: decoding the pid failed")
+        end
+
+        let pid: ErlangPid val = recover ErlangPid(_null_trimmed(buffer), num, serial, creation) end
+
+        pid
+
+    // todo: refactor
+    fun _null_trimmed(buffer: Array[U8] val): String val^ =>
+        try
+            // try trimming the extra null terminators
+            let trimmed: Array[U8] val = recover buffer.slice(0, buffer.find(0)?) end
+            String.from_array(trimmed)
+        else
+            String.from_array(buffer)
+        end
+
     fun ref connect(nodename: String): (ConnectionSucceeded | ConnectionFailed) =>
         // simple single connection for now
         if connected() then
