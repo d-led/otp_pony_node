@@ -44,8 +44,8 @@ int opn_ei_connect(opn_ei_t *self, const char* nodename)
 int opn_ei_self_pid(opn_ei_t *self, char* buffer, unsigned int* num, unsigned int* serial_, unsigned int* creation)
 {
     assert(self);
-    assert(index);
     assert(buffer);
+    assert(num);
     assert(serial_);
     assert(creation);
 
