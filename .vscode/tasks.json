@@ -1,0 +1,24 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "test (X)",
+            "type": "shell",
+            "linux": {
+                "command": "./build.sh -d && ./otp_pony_node_test",
+            },
+            "osx": {
+                "command": "./build.sh -d && ./otp_pony_node_test",
+            },
+            // "windows": {
+            //     "command": "build.bat",
+            // },
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+        }
+    ]
+}
