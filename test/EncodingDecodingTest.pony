@@ -37,6 +37,12 @@ class iso _EncodingRoundtripTest is UnitTest
     (a, read_pos) = m.atom_at(read_pos)
     h.assert_eq[String](a as String, "a test")
 
+    // binaries
+    h.assert_eq[I32](m.encode_binary("an Ö test"), 0)
+    (var b, read_pos) = m.binary_at(read_pos)
+    h.assert_eq[String](b as String, "an Ö test")
+
+
 class iso _ConstructingMessageFromNullPtr is UnitTest
   fun name(): String => "constructing a messsage from a null pointer should not crash the program"
 

@@ -78,6 +78,9 @@ class EMessage
 
         (_null_trimmed(buffer), index)
 
+    fun ref encode_binary(what: String): I32 =>
+        @opn_ei_message_encode_binary[I32](_message, what.cpointer(), what.size())
+
     // returns string or nothing, and the next position
     fun ref binary_at(pos: I32): ((String | None), I32) =>
         if not valid() then

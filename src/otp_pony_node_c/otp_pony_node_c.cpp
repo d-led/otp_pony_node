@@ -186,7 +186,6 @@ int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* si
 int opn_ei_message_encode_atom(opn_ei_message_t *self, char const* what)
 {
     assert(self);
-    assert(self->buff.buff);
     assert(what);
 
     return ei_x_encode_atom(&self->buff, what);
@@ -199,6 +198,15 @@ int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer)
     assert(index);
 
     return ei_decode_atom(self->buff.buff, index, buffer);
+}
+
+int opn_ei_message_encode_binary(opn_ei_message_t *self, char const* what, long len)
+{
+    assert(self);
+    assert(what);
+    assert(len > 0);
+
+    return ei_x_encode_binary(&self->buff, what, len);
 }
 
 int opn_ei_message_binary_at(opn_ei_message_t *self, int* index, char* buffer, long* len)
