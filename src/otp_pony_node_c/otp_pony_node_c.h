@@ -31,11 +31,14 @@ OPN_API opn_ei_message_t * opn_ei_receive_tmo(opn_ei_t *self, int connection_id,
 
 OPN_API void opn_ei_destroy (opn_ei_t **self_p);
 
+OPN_API opn_ei_message_t * opn_ei_message_new();
+
 OPN_API size_t opn_ei_message_length(opn_ei_message_t *self);
 
 OPN_API int opn_ei_message_beginning(opn_ei_message_t *self);
 
 OPN_API int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* size);
+OPN_API int opn_ei_message_encode_atom(opn_ei_message_t *self, char const* what);
 OPN_API int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer);
 OPN_API int opn_ei_message_binary_at(opn_ei_message_t *self, int* index, char* buffer, long* len);
 OPN_API int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity);

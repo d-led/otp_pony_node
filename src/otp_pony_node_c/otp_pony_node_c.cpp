@@ -39,7 +39,7 @@ opn_ei_message_t * opn_ei_new_message()
     try
     {
         opn_ei_message_t * m = new opn_ei_message_t;
-        if (ei_x_new(&m->buff) < 0) {
+        if (ei_x_new_with_version(&m->buff) < 0) {
             delete m;
             return nullptr;
         }
@@ -119,6 +119,11 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation
     }
 }
 
+opn_ei_message_t * opn_ei_message_new()
+{
+    return opn_ei_new_message();
+}
+
 size_t opn_ei_message_length(opn_ei_message_t *self)
 {
     assert(self);
@@ -143,6 +148,15 @@ int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* si
     assert(type);
     assert(size);
     return ei_get_type(self->buff.buff, &index, type, size);
+}
+
+int opn_ei_message_encode_atom(opn_ei_message_t *self, char const* what)
+{
+    assert(self);
+    assert(self->buff.buff);
+    assert(what);
+
+    return ei_x_encode_atom(&self->buff, what);
 }
 
 int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer)

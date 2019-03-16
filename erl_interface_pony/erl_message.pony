@@ -5,6 +5,16 @@ class EMessage
     var _message: Pointer[None]
     let beginning: I32 // after the message header size
 
+    new begin() =>
+        let message' = @opn_ei_message_new[Pointer[None]]()
+        _message = message'
+
+        if message' != Pointer[None] then
+            beginning = @opn_ei_message_beginning[I32](_message)
+        else
+            beginning = 0
+        end
+
     new from_cpointer(message': Pointer[None]) =>        
         _message = message'
 
@@ -15,7 +25,7 @@ class EMessage
         end
 
     fun ref length(): USize =>
-        if not _valid() then
+        if not valid() then
             return 0
         end
 
@@ -23,7 +33,7 @@ class EMessage
 
     // returns a TermType & size
     fun ref type_at(pos: I32): (U8, I32) =>
-        if not _valid() then
+        if not valid() then
             return (TermType.none(), 0)
         end
 
@@ -39,10 +49,13 @@ class EMessage
 
         (type', size')
 
+    fun ref encode_atom(what: String): I32 =>
+        @opn_ei_message_encode_atom[I32](_message, what.cstring())
+
     // t_ERL_ATOM_EXT
     // returns string or nothing, and the next position
     fun ref atom_at(pos: I32): ((String | None), I32) =>
-        if not _valid() then
+        if not valid() then
             return (None, 0)
         end
 
@@ -60,11 +73,11 @@ class EMessage
             return (None, 0)
         end
 
-        (String.from_array(buffer), index)
+        (_null_trimmed(buffer), index)
 
     // returns string or nothing, and the next position
     fun ref binary_at(pos: I32): ((String | None), I32) =>
-        if not _valid() then
+        if not valid() then
             return (None, 0)
         end
 
@@ -92,7 +105,7 @@ class EMessage
     // returns (None, 0) if not a Pid
     // otherwise: arity, next position
     fun ref pid_at(pos: I32): ((ErlangPid val | None), I32) =>
-        if not _valid() then
+        if not valid() then
             return (None, 0)
         end
 
@@ -128,7 +141,7 @@ class EMessage
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position
     fun ref tuple_arity_at(pos: I32): (I32, I32) =>
-        if not _valid() then
+        if not valid() then
             return (-1, 0)
         end
 
@@ -208,7 +221,7 @@ class EMessage
             Debug.out(pos.string()+": Unknown type: " + t.string() + " " + s.string() + "bytes")
         end
 
-    fun ref _valid(): Bool =>
+    fun ref valid(): Bool =>
         _message != Pointer[None]
 
     fun _final() =>
