@@ -13,5 +13,7 @@ echo pony
 ponyc --version
 
 rem debug for now
-ponyc demo -d
+ponyc demo -d -b otp_pony_node
+if %errorlevel% neq 0 exit /b %errorlevel%
+ponyc test -d -b otp_pony_node_test
 if %errorlevel% neq 0 exit /b %errorlevel%

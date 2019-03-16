@@ -12,9 +12,13 @@
             "osx": {
                 "command": "./build.sh -d && ./otp_pony_node_test",
             },
-            // "windows": {
-            //     "command": "build.bat",
-            // },
+            "windows": {
+                "command": "cmd",
+                "args": [
+                    "/C",
+                    "build.bat & otp_pony_node_test"
+                ]
+            },
             "group": "test",
             "options": {
                 "cwd": "${workspaceFolder}"
