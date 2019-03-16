@@ -34,9 +34,11 @@ Given a Pony C Node process, connected to a parent Erlang process, utilizing exi
 
 successful POC:
 
-- messages received
+- messages received in Pony
+- messages sent from Pony
 - graceful handling of a failed receive
 - parsing the messages (in progress)
+- encoding new messages (in progress)
 
 ```txt
 $ ./otp_pony_node
@@ -130,13 +132,11 @@ m.debug_type_at(pos)
 ## Backlog
 
 - expand the API coverage
-  - create messages
-  - send (with timeout)
+  - fill the gaps of encoding/decoding the messages
   - conform to the C Node protocol
 - higher level API
   - message builder & reader (hiding away current position)
-- testing strategy
-- remove the double term type checking in decode functions after testing is in place
+- connected testing strategy
 - treat and test the project as a library
 - reconnects / actor interface design?
 - multiple connections per `EInterface`
