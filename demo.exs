@@ -7,7 +7,7 @@ defmodule Demo do
     def run(tries) do
         {:ok, hostname} = :inet.gethostname
         pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
-        IO.inspect(pony)
+        IO.inspect(pony, label: "Elixir: pony destination")
         send(pony, {self(),"#{tries}: Hi!"})
         receive do
             m -> IO.puts "Elixir: received: #{m}"
