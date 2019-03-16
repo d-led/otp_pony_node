@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 #include <cstring>
+#include <cstdlib>
 
 void opn_set_tracelevel(int level)
 {
@@ -25,6 +26,11 @@ struct _opn_ei_message_t
 {
     erlang_msg msg;
     ei_x_buff buff;
+};
+
+struct _opn_ei_pid_t
+{
+    erlang_pid pid;
 };
 
 int opn_ei_connect(opn_ei_t *self, const char* nodename)
@@ -226,6 +232,38 @@ void opn_ei_message_destroy(opn_ei_message_t **self_p)
     if (*self_p) {
         opn_ei_message_t *self = *self_p;
         ei_x_free(&self->buff);
+        delete self;
+        *self_p = nullptr;
+    }
+}
+
+opn_ei_pid_t * opn_ei_pid_new(char const* node, unsigned int num, unsigned int serial_, unsigned int creation)
+{
+    try
+    {
+        opn_ei_pid_t *self = new opn_ei_pid_t;
+        self->pid.num = num;
+        self->pid.serial = serial_;
+        self->pid.creation = creation;
+
+        memset(self->pid.node, 0, sizeof(self->pid.node)/sizeof(self->pid.node[0]));
+        // both should have been null-terminated
+        strcpy(self->pid.node, node);
+
+        return self;
+    }
+    catch (std::exception &e)
+    {
+        std::cerr << "opn_ei_pid_new: " << e.what() << std::endl;
+        return nullptr;
+    }
+}
+
+void opn_ei_pid_destroy(opn_ei_pid_t **self_p)
+{
+    assert (self_p);
+    if (*self_p) {
+        opn_ei_pid_t *self = *self_p;
         delete self;
         *self_p = nullptr;
     }

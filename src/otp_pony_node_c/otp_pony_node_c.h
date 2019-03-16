@@ -21,6 +21,7 @@ OPN_API void opn_set_tracelevel(int level);
 // see https://rfc.zeromq.org/spec:21/CLASS/
 typedef struct _opn_ei_t opn_ei_t;
 typedef struct _opn_ei_message_t opn_ei_message_t;
+typedef struct _opn_ei_pid_t opn_ei_pid_t;
 
 OPN_API opn_ei_t * opn_ei_new (const char* this_nodename, const char* cookie, int creation);
 
@@ -45,6 +46,9 @@ OPN_API int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, in
 OPN_API int opn_ei_message_pid_at(opn_ei_message_t *self, int* index, char* buffer, unsigned int* num, unsigned int* serial_, unsigned int* creation);
 
 OPN_API void opn_ei_message_destroy (opn_ei_message_t **self_p);
+
+OPN_API opn_ei_pid_t * opn_ei_pid_new (char const* node, unsigned int num, unsigned int serial_, unsigned int creation);
+OPN_API void opn_ei_pid_destroy (opn_ei_pid_t **self_p);
 
 
 #if defined(__cplusplus)
