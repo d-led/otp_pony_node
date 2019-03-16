@@ -16,7 +16,7 @@ function find_ei()
     -- installed via Homebrew
     if os.target() == "macosx" then
         -- return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
-        return exec("ls -td -- /usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-*/ | head -n 1")
+        return exec("ls -td -- /usr/local/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ | head -n 1")
     end
 
     -- installed via official instructions
