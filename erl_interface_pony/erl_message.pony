@@ -110,7 +110,7 @@ class EMessage
 
     // returns (None, 0) if not a Pid
     // otherwise: arity, next position
-    fun ref pid_at(pos: I32): ((ErlangPid val | None), I32) =>
+    fun ref pid_at(pos: I32): ((ErlangPid | None), I32) =>
         if not valid() then
             return (None, 0)
         end

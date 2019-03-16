@@ -127,6 +127,12 @@ m.debug_type_at(pos)
 // pos is mutable and gets updated after each successful token parsed
 (let msg, pos) = m.binary_at(pos)
 // do something with msg
+
+// sending a message
+let pid2 = ErlangPid.create("demo@localhost", 97, 0, 3) /* or the received one */
+let m = EMessage.begin()
+m.encode_atom("hello from Pony!")
+erl.send_with_timeout(pid2, m, 500 /*ms*/)
 ```
 
 ## Backlog

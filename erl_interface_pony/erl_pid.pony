@@ -1,4 +1,4 @@
-class val ErlangPid
+class val ErlangPid is Stringable
     let node: String
     let num: U32
     let serial: U32
@@ -6,7 +6,7 @@ class val ErlangPid
 
     var _cpid: Pointer[None]
 
-    new create(node': String, num': U32, serial': U32, creation': U32) =>
+    new val create(node': String, num': U32, serial': U32, creation': U32) =>
         node = node'
         num = num'
         serial = serial'
@@ -15,6 +15,19 @@ class val ErlangPid
 
     fun val cpointer(): Pointer[None] val =>
         _cpid
+
+    fun box string() : String iso^ =>
+        recover
+            let s: String ref = String
+            s.append("node: " )
+            s.append(node)
+            s.append(", num: ")
+            s.append(num.string())
+            s.append(", serial: ")
+            s.append(serial.string())
+            s.append(", creation: " + creation.string())
+            s
+        end
 
     fun _final() =>
         if _cpid != Pointer[None] then

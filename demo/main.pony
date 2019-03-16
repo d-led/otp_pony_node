@@ -79,6 +79,7 @@ actor PonyNode
       match pid
       | let p: ErlangPid =>
         // reply
+        _env.out.print("Pony: elixir target: " + p.string())
         let r = EMessage.begin()
         _reply_nr = _reply_nr + 1
         r.encode_atom("hello from Pony " + _reply_nr.string() + "!")
