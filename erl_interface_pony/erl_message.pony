@@ -5,15 +5,28 @@ class EMessage
     var _message: Pointer[None]
     let beginning: I32 // after the message header size
 
-    new create(message': Pointer[None]) =>
+    new create(message': Pointer[None]) =>        
         _message = message'
-        beginning = @opn_ei_message_beginning[I32](_message)
+
+        if message' != Pointer[None] then
+            beginning = @opn_ei_message_beginning[I32](_message)
+        else
+            beginning = 0
+        end
 
     fun ref length(): USize =>
+        if not _valid() then
+            return 0
+        end
+
         @opn_ei_message_length[USize](_message)
 
     // returns a TermType & size
     fun ref type_at(pos: I32): (U8, I32) =>
+        if not _valid() then
+            return (TermType.none(), 0)
+        end
+
         var type': U8 = 0
         var size': I32 = 0
         let res = @opn_ei_message_type_at[I32](_message, pos, addressof type', addressof size')
@@ -29,6 +42,10 @@ class EMessage
     // t_ERL_ATOM_EXT
     // returns string or nothing, and the next position
     fun ref atom_at(pos: I32): ((String | None), I32) =>
+        if not _valid() then
+            return (None, 0)
+        end
+
         (let t, let s) = type_at(pos)
         if t != TermType.t_ERL_ATOM_EXT() then
             return (None, 0)
@@ -47,6 +64,10 @@ class EMessage
 
     // returns string or nothing, and the next position
     fun ref binary_at(pos: I32): ((String | None), I32) =>
+        if not _valid() then
+            return (None, 0)
+        end
+
         (let t, let s) = type_at(pos)
         if t != TermType.t_ERL_BINARY_EXT() then
             return (None, 0)
@@ -71,6 +92,10 @@ class EMessage
     // returns (None, 0) if not a Pid
     // otherwise: arity, next position
     fun ref pid_at(pos: I32): ((ErlangPid val | None), I32) =>
+        if not _valid() then
+            return (None, 0)
+        end
+
         (let t, let s) = type_at(pos)
         if t != TermType.t_ERL_PID_EXT() then
             return (None, 0)
@@ -103,6 +128,10 @@ class EMessage
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position
     fun ref tuple_arity_at(pos: I32): (I32, I32) =>
+        if not _valid() then
+            return (-1, 0)
+        end
+
         (let t, let s) = type_at(pos)
         if (t != TermType.t_ERL_SMALL_TUPLE_EXT()) and (t != TermType.t_ERL_LARGE_TUPLE_EXT()) then
             return (-1, 0)
@@ -173,9 +202,14 @@ class EMessage
             Debug.out(pos.string()+": ERL_MAP " + s.string() + "bytes")
         | TermType.t_ERL_FUN_EXT() =>
             Debug.out(pos.string()+": ERL_FUN " + s.string() + "bytes")
+        | TermType.none() =>
+            Debug.out("no type: message is invalid")
         else
             Debug.out(pos.string()+": Unknown type: " + t.string() + " " + s.string() + "bytes")
         end
+
+    fun ref _valid(): Bool =>
+        _message != Pointer[None]
 
     fun _final() =>
         if _message != Pointer[None] then

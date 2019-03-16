@@ -31,4 +31,5 @@ ponyc test -d -b otp_pony_node_test
 
 if [ "$os" == "macosx" ]; then
     install_name_tool -change "@rpath/libotp_pony_node_c.so" "@loader_path/libotp_pony_node_c.so" otp_pony_node
+    install_name_tool -change "@rpath/libotp_pony_node_c.so" "@loader_path/libotp_pony_node_c.so" otp_pony_node_test
 fi
