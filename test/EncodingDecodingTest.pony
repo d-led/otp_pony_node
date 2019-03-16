@@ -19,13 +19,10 @@ class iso _EncodingRoundtripTest is UnitTest
 
     // before encoding
     (var t, var s) = m.type_at(m.beginning)
-    Debug.out(m.beginning)
     h.assert_eq[U8](
         t,
         TermType.none()
     )
-    m.debug_type_at(0)
-    m.debug_type_at(m.beginning)
 
     // atoms
     h.assert_eq[I32](m.encode_atom("hello"), 0)

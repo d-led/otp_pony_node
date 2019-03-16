@@ -175,6 +175,11 @@ int opn_ei_message_type_at(opn_ei_message_t *self, int index, int* type, int* si
     assert(self);
     assert(type);
     assert(size);
+    if (index <0 || index >= self->buff.index) {
+        *type = 0;
+        *size = 0;
+        return 1 /*unknown type*/;
+    }
     return ei_get_type(self->buff.buff, &index, type, size);
 }
 
