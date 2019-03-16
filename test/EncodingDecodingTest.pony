@@ -52,6 +52,16 @@ class iso _EncodingRoundtripTest is UnitTest
     h.assert_eq[U32](pid2.serial, pid.serial)
     h.assert_eq[U32](pid2.creation, pid.creation)
 
+    // tuples
+    h.assert_eq[I32](m.encode_tuple_header(2), 0)
+    (var arity, read_pos) = m.tuple_arity_at(read_pos)
+    h.assert_eq[I32](2, arity)
+    h.assert_eq[I32](m.encode_binary("part 1"), 0)
+    h.assert_eq[I32](m.encode_atom("part 2"), 0)
+    (b, read_pos) = m.binary_at(read_pos)
+    (a, read_pos) = m.atom_at(read_pos)
+    h.assert_eq[String](b as String, "part 1")
+    h.assert_eq[String](a as String, "part 2")
 
 class iso _ConstructingMessageFromNullPtr is UnitTest
   fun name(): String => "constructing a messsage from a null pointer should not crash the program"

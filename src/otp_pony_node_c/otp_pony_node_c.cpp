@@ -243,6 +243,13 @@ int opn_ei_message_binary_at(opn_ei_message_t *self, int* index, char* buffer, l
     return ei_decode_binary(self->buff.buff, index, buffer, len);
 }
 
+int opn_ei_message_encode_tuple_header(opn_ei_message_t *self, int arity)
+{
+    assert(self);
+
+    return ei_x_encode_tuple_header(&self->buff, arity);    
+}
+
 int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity)
 {
     assert(self);

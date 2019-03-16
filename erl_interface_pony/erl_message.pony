@@ -138,6 +138,8 @@ class EMessage
         let pid: ErlangPid val = recover ErlangPid(Strings.null_trimmed(buffer), num, serial, creation) end
         (pid, index)
 
+    fun ref encode_tuple_header(arity: I32): I32 =>
+        @opn_ei_message_encode_tuple_header[I32](_message, arity)
 
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position

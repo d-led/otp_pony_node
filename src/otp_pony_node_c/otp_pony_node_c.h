@@ -46,6 +46,7 @@ OPN_API int opn_ei_message_encode_atom(opn_ei_message_t *self, char const* what)
 OPN_API int opn_ei_message_atom_at(opn_ei_message_t *self, int* index, char* buffer);
 OPN_API int opn_ei_message_encode_binary(opn_ei_message_t *self, char const* what, long len);
 OPN_API int opn_ei_message_binary_at(opn_ei_message_t *self, int* index, char* buffer, long* len);
+OPN_API int opn_ei_message_encode_tuple_header(opn_ei_message_t *self, int arity);
 OPN_API int opn_ei_message_tuple_arity_at(opn_ei_message_t *self, int* index, int* arity);
 OPN_API int opn_ei_message_encode_pid(opn_ei_message_t *self, opn_ei_pid_t const* pid);
 OPN_API int opn_ei_message_pid_at(opn_ei_message_t *self, int* index, char* buffer, unsigned int* num, unsigned int* serial_, unsigned int* creation);

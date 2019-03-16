@@ -10,7 +10,8 @@ defmodule Demo do
         IO.inspect(pony, label: "Elixir: pony destination")
         send(pony, {self(),"#{tries}: Hi!"})
         receive do
-            m -> IO.puts "Elixir: received: #{inspect(m)}"
+            m = {:reply, message, pid} -> IO.puts "Elixir: received: #{inspect(m)}"
+            send(pid, {self(),"#{tries}: Another hi via the sent pid!"})
         after
             3_000 ->
                 IO.puts "Elixir: nobody sent anything, continuing"
