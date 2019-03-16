@@ -30,6 +30,9 @@ class EMessage
         end
 
         @opn_ei_message_length[USize](_message)
+    
+    fun ref cpointer(): Pointer[None] =>
+        _message
 
     // returns a TermType & size
     fun ref type_at(pos: I32): (U8, I32) =>

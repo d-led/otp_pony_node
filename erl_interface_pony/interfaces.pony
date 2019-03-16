@@ -2,6 +2,9 @@ primitive ConnectionFailed
 primitive ConnectionSucceeded
 primitive ReceiveFailed
 primitive ReceiveTimedOut
+primitive SentOk 
+primitive SendFailed 
+primitive SendTimedOut
 
 type Connection is I32
 

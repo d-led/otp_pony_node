@@ -103,6 +103,28 @@ opn_ei_message_t * opn_ei_receive_tmo(opn_ei_t *self, int connection_id, unsigne
     return m;
 }
 
+int opn_ei_send_tmo(opn_ei_t *self, int connection_id, opn_ei_pid_t *to, opn_ei_message_t * what, unsigned int ms, int* timed_out)
+{
+    assert(self);
+    assert(timed_out);
+    assert(to);
+    assert(what);
+
+    int res = 0;
+
+    if (ms!=0) {
+        res = ei_send_tmo(connection_id, &to->pid, what->buff.buff, what->buff.index, ms);
+    } else {
+        res = ei_send(connection_id, &to->pid, what->buff.buff, what->buff.index);
+    }
+
+    if (res < 0) {
+        *timed_out = erl_errno == ETIMEDOUT;
+    }
+
+    return res;
+}
+
 opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation)
 {
     try

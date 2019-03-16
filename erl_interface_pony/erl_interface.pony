@@ -67,6 +67,24 @@ class EInterface
         
         EMessage.from_cpointer(message_p)
 
+    fun send_with_timeout(to: ErlangPid, what: EMessage, timeout_ms: U32): (SentOk | SendFailed | SendTimedOut) =>
+        if _connection_id < 0 then
+            return SendFailed
+        end
+
+        var timed_out: I32 = 0
+        let res = @opn_ei_send_tmo[I32](_connection, _connection_id, to.cpointer(), what.cpointer(), timeout_ms, addressof timed_out)
+
+        if timed_out != 0 then
+            return SendTimedOut
+        end
+
+        if res != 0 then
+            return SendFailed
+        end
+
+        SentOk
+
     fun ref disconnect() =>
         if not connected() then 
             return
