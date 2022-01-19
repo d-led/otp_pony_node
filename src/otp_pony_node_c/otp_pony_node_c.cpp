@@ -160,6 +160,7 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation
 
         if (ei_connect_init(&self->node, self->this_nodename.c_str(), self->cookie.c_str(), self->creation) < 0) {
             opn_ei_destroy(&self);
+            std::cerr << "opn_ei_new: " << erl_errno << std::endl;
             return nullptr;
         }
         return self;
