@@ -153,6 +153,7 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie, int creation
 {
     try
     {
+        ei_init();
         opn_ei_t *self = new opn_ei_t;
         self->creation = creation;
         self->this_nodename = this_nodename;
