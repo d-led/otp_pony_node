@@ -1,16 +1,30 @@
 use "lib:otp_pony_node_c"
 use "debug"
 
+use @opn_ei_message_new[Pointer[None]]()
+use @opn_ei_message_beginning[I32](_message: Pointer[None])
+use @opn_ei_message_length[USize](_message: Pointer[None])
+use @opn_ei_message_type_at[I32](_message: Pointer[None], pos: I32, type': Pointer[U8], size': Pointer[I32])
+use @opn_ei_message_encode_atom[I32](_message: Pointer[None], what: Pointer[U8] tag)
+use @opn_ei_message_atom_at[I32](_message: Pointer[None], index: Pointer[I32], buffer: Pointer[U8] tag)
+use @opn_ei_message_encode_binary[I32](_message: Pointer[None], what: Pointer[U8] tag, size: USize)
+use @opn_ei_message_binary_at[I32](_message: Pointer[None], index: Pointer[I32], buffer: Pointer[U8] tag, read_bytes: Pointer[I64])
+use @opn_ei_message_encode_pid[I32](_message: Pointer[None], pid: Pointer[None])
+use @opn_ei_message_pid_at[I32](_message: Pointer[None], index: Pointer[I32], buffer: Pointer[U8] tag, num: Pointer[U32], serial: Pointer[U32], creation: Pointer[U32])
+use @opn_ei_message_encode_tuple_header[I32](_message: Pointer[None], arity: I32)
+use @opn_ei_message_tuple_arity_at[I32](_message: Pointer[None], index: Pointer[I32], arity: Pointer[I32])
+use @opn_ei_message_destroy[None](_message: Pointer[None])
+
 class EMessage
     var _message: Pointer[None]
     let beginning: I32 // after the message header size
 
     new begin() =>
-        let message' = @opn_ei_message_new[Pointer[None]]()
+        let message' = @opn_ei_message_new()
         _message = message'
 
         if message' != Pointer[None] then
-            beginning = @opn_ei_message_beginning[I32](_message)
+            beginning = @opn_ei_message_beginning(_message)
         else
             beginning = 0
         end
@@ -19,7 +33,7 @@ class EMessage
         _message = message'
 
         if message' != Pointer[None] then
-            beginning = @opn_ei_message_beginning[I32](_message)
+            beginning = @opn_ei_message_beginning(_message)
         else
             beginning = 0
         end
@@ -29,7 +43,7 @@ class EMessage
             return 0
         end
 
-        @opn_ei_message_length[USize](_message)
+        @opn_ei_message_length(_message)
     
     fun ref cpointer(): Pointer[None] =>
         _message
@@ -42,7 +56,7 @@ class EMessage
 
         var type': U8 = 0
         var size': I32 = 0
-        let res = @opn_ei_message_type_at[I32](_message, pos, addressof type', addressof size')
+        let res = @opn_ei_message_type_at(_message, pos, addressof type', addressof size')
 
         // Debug.out("p:"+pos.string()+" t:"+type'.string()+" s:"+size'.string())
 
@@ -53,7 +67,7 @@ class EMessage
         (type', size')
 
     fun ref encode_atom(what: String): I32 =>
-        @opn_ei_message_encode_atom[I32](_message, what.cstring())
+        @opn_ei_message_encode_atom(_message, what.cstring())
 
     // t_ERL_ATOM_EXT
     // returns string or nothing, and the next position
@@ -70,7 +84,7 @@ class EMessage
         let buffer: Array[U8] val = recover Array[U8].init(0, s.usize() + 1 /*null*/) end
 
         var index: I32 = pos
-        let res = @opn_ei_message_atom_at[I32](_message, addressof index, buffer.cpointer())
+        let res = @opn_ei_message_atom_at(_message, addressof index, buffer.cpointer())
 
         if res < 0 then
             return (None, 0)
@@ -79,7 +93,7 @@ class EMessage
         (Strings.null_trimmed(buffer), index)
 
     fun ref encode_binary(what: String): I32 =>
-        @opn_ei_message_encode_binary[I32](_message, what.cpointer(), what.size())
+        @opn_ei_message_encode_binary(_message, what.cpointer(), what.size())
 
     // returns string or nothing, and the next position
     fun ref binary_at(pos: I32): ((String | None), I32) =>
@@ -96,7 +110,7 @@ class EMessage
 
         var index: I32 = pos
         var read_bytes: I64 = 0
-        let res = @opn_ei_message_binary_at[I32](_message, addressof index, buffer.cpointer(), addressof read_bytes)
+        let res = @opn_ei_message_binary_at(_message, addressof index, buffer.cpointer(), addressof read_bytes)
 
         if res < 0 then
             return (None, 0)
@@ -109,7 +123,7 @@ class EMessage
         (Strings.null_trimmed(buffer), index)
 
     fun ref encode_pid(pid: ErlangPid): I32 =>
-        @opn_ei_message_encode_pid[I32](_message, pid.cpointer())
+        @opn_ei_message_encode_pid(_message, pid.cpointer())
 
     // returns (None, 0) if not a Pid
     // otherwise: arity, next position
@@ -129,7 +143,7 @@ class EMessage
         var num: U32 = 0
         var serial: U32 = 0
         var creation: U32 = 0
-        let res = @opn_ei_message_pid_at[I32](_message, addressof index, buffer.cpointer(), addressof num, addressof serial, addressof creation)
+        let res = @opn_ei_message_pid_at(_message, addressof index, buffer.cpointer(), addressof num, addressof serial, addressof creation)
 
         if res < 0 then
             return (None, 0)
@@ -139,7 +153,7 @@ class EMessage
         (pid, index)
 
     fun ref encode_tuple_header(arity: I32): I32 =>
-        @opn_ei_message_encode_tuple_header[I32](_message, arity)
+        @opn_ei_message_encode_tuple_header(_message, arity)
 
     // returns (-1, 0) if not a tuple
     // otherwise: arity, next position
@@ -155,7 +169,7 @@ class EMessage
 
         var index: I32 = pos
         var arity: I32 = -1
-        let res = @opn_ei_message_tuple_arity_at[I32](_message, addressof index, addressof arity)
+        let res = @opn_ei_message_tuple_arity_at(_message, addressof index, addressof arity)
 
         if res < 0 then
             return (-1, 0)
@@ -229,5 +243,5 @@ class EMessage
 
     fun _final() =>
         if _message != Pointer[None] then
-            @opn_ei_message_destroy[None](addressof _message)
+            @opn_ei_message_destroy(addressof _message)
         end

@@ -1,3 +1,6 @@
+use @opn_ei_pid_new[Pointer[None]](node': Pointer[None], num: U32, serial: U32, creation: U32)
+use @opn_ei_pid_destroy[None](_cpid: Pointer[None])
+
 class val ErlangPid is Stringable
     let node: String
     let num: U32
@@ -11,7 +14,7 @@ class val ErlangPid is Stringable
         num = num'
         serial = serial'
         creation = creation'
-        _cpid = @opn_ei_pid_new[Pointer[None]](node'.cstring(), num, serial, creation)
+        _cpid = @opn_ei_pid_new(node'.cstring(), num, serial, creation)
 
     fun val cpointer(): Pointer[None] val =>
         _cpid
@@ -31,5 +34,5 @@ class val ErlangPid is Stringable
 
     fun _final() =>
         if _cpid != Pointer[None] then
-            @opn_ei_pid_destroy[None](addressof _cpid)
+            @opn_ei_pid_destroy(addressof _cpid)
         end

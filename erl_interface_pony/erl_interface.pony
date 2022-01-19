@@ -1,6 +1,15 @@
 use "lib:otp_pony_node_c"
 use "debug"
 
+use @opn_set_tracelevel[None](level: I32)
+use @opn_ei_self_pid[I32](_connection: Pointer[None], buffer: Pointer[U8] tag, num: Pointer[U32], serial: Pointer[U32], creation: Pointer[U32])
+use @opn_ei_new[Pointer[None]](_this_nodename: Pointer[U8] tag, _cookie: Pointer[U8] tag, _creation: I16)
+use @opn_ei_connect[I32](_connection: Pointer[None], nodename: Pointer[U8] tag)
+use @opn_ei_receive[Pointer[None]](_connection: Pointer[None], _connection_id: Connection)
+use @opn_ei_receive_tmo[Pointer[None]](_connection: Pointer[None], _connection_id: Connection, timeout_ms: U32, timed_out: Pointer[I32])
+use @opn_ei_send_tmo[I32](_connection: Pointer[None], _connection_id: Connection, to: Pointer[None], what: Pointer[None], timeout_ms: U32, timed_out: Pointer[I32])
+use @opn_ei_destroy[None](_connection: Pointer[None])
+
 class EInterface
     let _this_nodename: String
     let _cookie: String
@@ -14,14 +23,14 @@ class EInterface
         _creation = creation'
 
     fun set_tracelevel(level: I32) =>
-        @opn_set_tracelevel[None](level)
+        @opn_set_tracelevel(level)
 
     fun ref self_pid(): ErlangPid =>
         let buffer: Array[U8] val = recover Array[U8].init(0, /*MAXATOMLEN_UTF8*/ (255*4) + 1 /*null*/) end
         var num: U32 = 0
         var serial: U32 = 0
         var creation: U32 = 0
-        let res = @opn_ei_self_pid[I32](_connection, buffer.cpointer(), addressof num, addressof serial, addressof creation)
+        let res = @opn_ei_self_pid(_connection, buffer.cpointer(), addressof num, addressof serial, addressof creation)
 
         if res != 0 then
             // todo: strategy on failure
@@ -39,13 +48,13 @@ class EInterface
             return ConnectionFailed
         end
 
-        _connection = @opn_ei_new[Pointer[None]](_this_nodename.cstring(), _cookie.cstring(), _creation)
+        _connection = @opn_ei_new(_this_nodename.cstring(), _cookie.cstring(), _creation)
 
         if _connection.is_null() then
             return ConnectionFailed
         end
 
-        _connection_id = @opn_ei_connect[I32](_connection, nodename.cstring())
+        _connection_id = @opn_ei_connect(_connection, nodename.cstring())
         if _connection_id < 0 then
             disconnect()
             return ConnectionFailed
@@ -58,7 +67,7 @@ class EInterface
             return ReceiveFailed
         end
 
-        let message_p = @opn_ei_receive[Pointer[None]](_connection, _connection_id)
+        let message_p = @opn_ei_receive(_connection, _connection_id)
         if message_p == Pointer[None] then
             return ReceiveFailed
         end
@@ -71,7 +80,7 @@ class EInterface
         end
 
         var timed_out: I32 = 0
-        let message_p = @opn_ei_receive_tmo[Pointer[None]](_connection, _connection_id, timeout_ms, addressof timed_out)
+        let message_p = @opn_ei_receive_tmo(_connection, _connection_id, timeout_ms, addressof timed_out)
 
         if timed_out != 0 then
             return ReceiveTimedOut
@@ -89,7 +98,7 @@ class EInterface
         end
 
         var timed_out: I32 = 0
-        let res = @opn_ei_send_tmo[I32](_connection, _connection_id, to.cpointer(), what.cpointer(), timeout_ms, addressof timed_out)
+        let res = @opn_ei_send_tmo(_connection, _connection_id, to.cpointer(), what.cpointer(), timeout_ms, addressof timed_out)
 
         if timed_out != 0 then
             return SendTimedOut
@@ -106,7 +115,7 @@ class EInterface
             return
         end
 
-        @opn_ei_destroy[None](addressof _connection)
+        @opn_ei_destroy(addressof _connection)
         _connection = Pointer[None]
         _connection_id = -1
 
@@ -115,5 +124,5 @@ class EInterface
 
     fun _final() =>
         if _connection != Pointer[None] then
-            @opn_ei_destroy[None](addressof _connection)
+            @opn_ei_destroy(addressof _connection)
         end
