@@ -1,6 +1,8 @@
 # Erlang C Node for the Pony Language (spike/WIP)
 
-[![Build Status](https://travis-ci.org/d-led/otp_pony_node.svg?branch=master)](https://travis-ci.org/d-led/otp_pony_node)
+[![Docker Image CI](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml/badge.svg)](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml)
+
+[![Build Status](https://travis-ci.org/d-led/otp_pony_node.svg?branch=master)](https://travis-ci.org/d-led/otp_pony_node) (old)
 
 ## Motivation
 
