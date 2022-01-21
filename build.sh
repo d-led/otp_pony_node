@@ -9,6 +9,7 @@ case "$(uname)" in
 
   Linux)
     os="linux"
+    export PATH=/root/.local/share/ponyup/bin:$PATH
   ;;
 
   *)
