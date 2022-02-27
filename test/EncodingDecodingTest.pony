@@ -1,4 +1,4 @@
-use "ponytest"
+use "pony_test"
 use "debug"
 
 use "../erl_interface_pony"
