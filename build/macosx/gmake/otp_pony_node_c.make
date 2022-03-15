@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/macosx/otp_pony_node_c/Debug
   DEFINES += -D_REENTRANT -DBUILDING_OPN_API
-  INCLUDES += -I/usr/local/Cellar/erlang/24.2.1/lib/erlang/lib/erl_interface-5.1/include
+  INCLUDES += -I/usr/local/Cellar/erlang/24.3/lib/erlang/lib/erl_interface-5.2/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -fPIC -g -std=c++11
@@ -32,7 +32,7 @@ ifeq ($(config),debug)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lei
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/Cellar/erlang/24.2.1/lib/erlang/lib/erl_interface-5.1/lib -m64 -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
+  ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/Cellar/erlang/24.3/lib/erlang/lib/erl_interface-5.2/lib -m64 -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -59,7 +59,7 @@ ifeq ($(config),release)
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/macosx/otp_pony_node_c/Release
   DEFINES += -D_REENTRANT -DBUILDING_OPN_API
-  INCLUDES += -I/usr/local/Cellar/erlang/24.2.1/lib/erlang/lib/erl_interface-5.1/include
+  INCLUDES += -I/usr/local/Cellar/erlang/24.3/lib/erlang/lib/erl_interface-5.2/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fPIC -g -std=c++11
@@ -67,7 +67,7 @@ ifeq ($(config),release)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lei
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/Cellar/erlang/24.2.1/lib/erlang/lib/erl_interface-5.1/lib -m64 -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
+  ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/Cellar/erlang/24.3/lib/erlang/lib/erl_interface-5.2/lib -m64 -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
