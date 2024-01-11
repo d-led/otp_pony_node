@@ -16,6 +16,10 @@ function find_ei()
     -- installed via Homebrew
     if os.target() == "macosx" then
         -- return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
+        local ei_path = exec("ls -td -- /opt/homebrew/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ | head -n 1")
+        if ei_path ~= nil and ei_path ~= "" then
+            return ei_path
+        end
         return exec("ls -td -- /usr/local/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ | head -n 1")
     end
 
@@ -49,11 +53,9 @@ workspace "otp_pony_node"
     targetdir (".")
 
     filter "configurations:Debug"
-        architecture "x86_64"
         symbols "On"
 
     filter "configurations:Release"
-        architecture "x86_64"
         symbols "On"
         optimize "On"
 

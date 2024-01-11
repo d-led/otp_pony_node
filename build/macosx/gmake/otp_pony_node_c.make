@@ -24,15 +24,15 @@ ifeq ($(config),debug)
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/macosx/otp_pony_node_c/Debug
   DEFINES += -D_REENTRANT -DBUILDING_OPN_API
-  INCLUDES += -I/usr/local/Cellar/erlang/25.0.4/lib/erlang/lib/erl_interface-5.3/include
+  INCLUDES += -I/opt/homebrew/Cellar/erlang/26.2.1/lib/erlang/lib/erl_interface-5.5/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -fPIC -g -std=c++11
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -fPIC -g -std=c++11
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -fPIC -g -std=c++11
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -fPIC -g -std=c++11
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lei
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/Cellar/erlang/25.0.4/lib/erlang/lib/erl_interface-5.3/lib -m64 -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
+  ALL_LDFLAGS += $(LDFLAGS) -L/opt/homebrew/Cellar/erlang/26.2.1/lib/erlang/lib/erl_interface-5.5/lib -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -59,15 +59,15 @@ ifeq ($(config),release)
   TARGET = $(TARGETDIR)/libotp_pony_node_c.so
   OBJDIR = ../../../obj/macosx/otp_pony_node_c/Release
   DEFINES += -D_REENTRANT -DBUILDING_OPN_API
-  INCLUDES += -I/usr/local/Cellar/erlang/25.0.4/lib/erlang/lib/erl_interface-5.3/include
+  INCLUDES += -I/opt/homebrew/Cellar/erlang/26.2.1/lib/erlang/lib/erl_interface-5.5/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fPIC -g -std=c++11
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fPIC -g -std=c++11
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -fPIC -g -std=c++11
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -fPIC -g -std=c++11
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lei
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/usr/local/Cellar/erlang/25.0.4/lib/erlang/lib/erl_interface-5.3/lib -m64 -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
+  ALL_LDFLAGS += $(LDFLAGS) -L/opt/homebrew/Cellar/erlang/26.2.1/lib/erlang/lib/erl_interface-5.5/lib -dynamiclib -Wl,-install_name,@rpath/libotp_pony_node_c.so -std=c++11
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
