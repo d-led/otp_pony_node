@@ -6,8 +6,10 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL=bash
-RUN sh -c "$(curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh)"
-RUN ln -s /usr/local/lib/erlang /usr/lib/erlang && PATH=/root/.local/share/ponyup/bin:$PATH ponyup default x86_64-linux-ubuntu22.04 && ponyup update ponyc release
+RUN curl https://dl.cloudsmith.io/public/ponylang/releases/raw/versions/0.8.0/ponyup-x86-64-unknown-linux.tar.gz -o ponyup.tgz
+RUN mkdir -p /root/.local/share/ponyup/bin/ && mkdir -p /tmp/ponyup && tar xvzf ponyup.tgz -C /tmp/ponyup && mv /tmp/ponyup/*/bin/* /root/.local/share/ponyup/bin
+RUN echo "x86_64-linux-ubuntu20.04" > /root/.local/share/ponyup/.platform && ln -sf /root/.local/share/ponyup/bin/ponyup /usr/bin/ponyup && ponyup default "x86_64-linux-ubuntu20.04"
+RUN ln -sf /usr/local/lib/erlang /usr/lib/erlang && ponyup update ponyc release && ln -sf /root/.local/share/ponyup/bin/ponyc /usr/bin/ponyc
 
 ENV CC=cc
 COPY . /src/main/
