@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 ENV SHELL=/bin/bash
 
 # Install ponyup using the official script
-RUN curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh || [ -f /root/.local/share/ponyup/bin/ponyup ]
 
 # Add ponyup to PATH
 ENV PATH="/root/.local/share/ponyup/bin:${PATH}"
