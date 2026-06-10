@@ -9,6 +9,7 @@ class EncodingDecodingTest is TestList
   fun tag tests(test: PonyTest) =>
     test(_EncodingRoundtripTest)
     test(_ConstructingMessageFromNullPtr)
+    test(_RecursiveDecodingTest)
 
 class iso _EncodingRoundtripTest is UnitTest
   fun name(): String => "encoding a representative message and decoding it"
@@ -78,3 +79,68 @@ class iso _ConstructingMessageFromNullPtr is UnitTest
         t,
         TermType.none()
     )
+
+class iso _RecursiveDecodingTest is UnitTest
+  fun name(): String => "recursive decoding of nested Erlang terms"
+
+  fun apply(h: TestHelper) ? =>
+    let m = EMessage.begin()
+    h.assert_true(m.valid())
+
+    // Structure we want to encode: {hello, test@localhost, {"nested binary", nested_atom}}
+    h.assert_eq[I32](m.encode_tuple_header(3), 0)
+    h.assert_eq[I32](m.encode_atom("hello"), 0)
+    let pid = ErlangPid.create("test@localhost", 1, 2, 3)
+    h.assert_eq[I32](m.encode_pid(pid), 0)
+    
+    h.assert_eq[I32](m.encode_tuple_header(2), 0)
+    h.assert_eq[I32](m.encode_binary("nested binary"), 0)
+    h.assert_eq[I32](m.encode_atom("nested atom"), 0)
+
+    match ErlangTermDecoder.decode(m)
+    | let root_tuple: ErlangTuple =>
+      h.assert_eq[USize](root_tuple.elements.size(), 3)
+      
+      // Match element 1: Atom "hello"
+      match root_tuple.elements(0)?
+      | let a: ErlangAtom =>
+        h.assert_eq[String](a.name, "hello")
+      else
+        h.fail("element 0 is not an ErlangAtom")
+      end
+
+      // Match element 2: Pid "test@localhost"
+      match root_tuple.elements(1)?
+      | let p: ErlangPid =>
+        h.assert_eq[String](p.node, "test@localhost")
+        h.assert_eq[U32](p.num, 1)
+        h.assert_eq[U32](p.serial, 2)
+        h.assert_eq[U32](p.creation, 3)
+      else
+        h.fail("element 1 is not an ErlangPid")
+      end
+
+      // Match element 3: Nested Tuple {"nested binary", nested_atom}
+      match root_tuple.elements(2)?
+      | let nested_tuple: ErlangTuple =>
+        h.assert_eq[USize](nested_tuple.elements.size(), 2)
+        
+        match nested_tuple.elements(0)?
+        | let b: ErlangBinary =>
+          h.assert_eq[String](b.value, "nested binary")
+        else
+          h.fail("nested element 0 is not an ErlangBinary")
+        end
+
+        match nested_tuple.elements(1)?
+        | let a2: ErlangAtom =>
+          h.assert_eq[String](a2.name, "nested atom")
+        else
+          h.fail("nested element 1 is not an ErlangAtom")
+        end
+      else
+        h.fail("element 2 is not an ErlangTuple")
+      end
+    else
+      h.fail("decoded term is not an ErlangTuple")
+    end
