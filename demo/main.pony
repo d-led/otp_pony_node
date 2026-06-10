@@ -62,34 +62,39 @@ actor PonyNode
     
     fun ref handle_message(m: EMessage ref) =>
       _env.out.print("Pony: received: " + m.length().string() + "bytes")
+      
+      // Keep original debug_type_at calls to print the type info for the tests/demo logs
       m.debug_type_at(m.beginning)
-      // expecting a tuple with a pid & a message (binary)
       (var arity, var pos) = m.tuple_arity_at(m.beginning)
-      if arity != 2 then
-        _env.out.print("Pony: didn't expect tuple arity of " + arity.string())
-        return
+      if arity == 2 then
+        m.debug_type_at(pos)
+        (var pid, var pos2) = m.pid_at(pos)
+        m.debug_type_at(pos2)
       end
-      m.debug_type_at(pos)
-      (var pid, pos) = m.pid_at(pos)
-      print_pid_or_none(pid)
-      m.debug_type_at(pos)
-      (let msg, pos) = m.binary_at(pos)
-      print_string_or_none(msg)
 
-      match pid
-      | let p: ErlangPid =>
-        // reply
-        _env.out.print("Pony: elixir target: " + p.string())
-        let r = EMessage.begin()
-        r.encode_tuple_header(3)
-        r.encode_atom("reply")
-        _reply_nr = _reply_nr + 1
-        r.encode_binary("hello from Pony " + _reply_nr.string() + "!")
-        r.encode_pid(erl.self_pid())
-        _env.out.print("Pony: sending a reply")
-        erl.send_with_timeout(p, r, 500)
+      match ErlangTermDecoder.decode(m)
+      | let root_tuple: ErlangTuple =>
+        try
+          let pid = root_tuple.elements(0)? as ErlangPid
+          let msg = root_tuple.elements(1)? as ErlangBinary
+
+          _env.out.print("Pony: pid: " + pid.node)
+          _env.out.print("Pony: atom: " + msg.value)
+
+          _env.out.print("Pony: elixir target: " + pid.string())
+          let r = EMessage.begin()
+          r.encode_tuple_header(3)
+          r.encode_atom("reply")
+          _reply_nr = _reply_nr + 1
+          r.encode_binary("hello from Pony " + _reply_nr.string() + "!")
+          r.encode_pid(erl.self_pid())
+          _env.out.print("Pony: sending a reply")
+          erl.send_with_timeout(pid, r, 500)
+        else
+          _env.out.print("Pony: no Pid to send the answer to")
+        end
       else
-        _env.out.print("Pony: no Pid to send the answer to")
+        _env.out.print("Pony: failed to decode root term as tuple")
       end
 
 actor Main
