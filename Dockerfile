@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL=/bin/bash
+ENV ERL_FLAGS="+Ji false"
 
 # Install ponyup using the official script
 RUN curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh || [ -f /root/.local/share/ponyup/bin/ponyup ]
