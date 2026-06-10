@@ -16,3 +16,11 @@ otp_pony_node_c.dll
 !src/find_latest_erl_interface/find_latest_erl_interface.exe
 !premake/windows/premake5.exe
 otp_pony_node_test
+
+# Corral dependency management
+_corral/
+_repos/
+
+# Corral Demo artifacts
+corral_demo/corral_demo
+corral_demo/libotp_pony_node_c.so

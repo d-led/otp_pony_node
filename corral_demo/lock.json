@@ -1,0 +1,8 @@
+{
+  "locks": [
+    {
+      "locator": "github.com/d-led/otp_pony_node.git",
+      "revision": "master"
+    }
+  ]
+}

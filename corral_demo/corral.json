@@ -1,0 +1,17 @@
+{
+  "packages": [],
+  "deps": [
+    {
+      "locator": "github.com/d-led/otp_pony_node.git",
+      "version": "master"
+    }
+  ],
+  "info": {
+    "description": "Demo using otp_pony_node via Corral",
+    "homepage": "",
+    "license": "",
+    "documentation_url": "",
+    "version": "0.1.0",
+    "name": "corral_demo"
+  }
+}
