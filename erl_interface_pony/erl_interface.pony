@@ -9,6 +9,11 @@ use @opn_ei_receive[Pointer[None]](_connection: Pointer[None], _connection_id: C
 use @opn_ei_receive_tmo[Pointer[None]](_connection: Pointer[None], _connection_id: Connection, timeout_ms: U32, timed_out: Pointer[I32])
 use @opn_ei_send_tmo[I32](_connection: Pointer[None], _connection_id: Connection, to: Pointer[None], what: Pointer[None], timeout_ms: U32, timed_out: Pointer[I32])
 use @opn_ei_destroy[None](_connection: Pointer[None])
+use @opn_ei_set_compat_rel[None](rel: U32)
+use @opn_ei_get_tracelevel[I32]()
+use @opn_ei_thisnodename[Pointer[U8]](_connection: Pointer[None])
+use @opn_ei_thishostname[Pointer[U8]](_connection: Pointer[None])
+use @opn_ei_thisalivename[Pointer[U8]](_connection: Pointer[None])
 
 class EInterface
     let _this_nodename: String
@@ -24,6 +29,36 @@ class EInterface
 
     fun set_tracelevel(level: I32) =>
         @opn_set_tracelevel(level)
+
+    fun get_tracelevel(): I32 =>
+        @opn_ei_get_tracelevel()
+
+    fun set_compat_rel(rel: U32) =>
+        @opn_ei_set_compat_rel(rel)
+
+    fun this_nodename(): String =>
+        if not connected() then "" else
+            let ptr = @opn_ei_thisnodename(_connection)
+            if ptr.is_null() then "" else
+                String.from_cstring(ptr).clone()
+            end
+        end
+
+    fun this_hostname(): String =>
+        if not connected() then "" else
+            let ptr = @opn_ei_thishostname(_connection)
+            if ptr.is_null() then "" else
+                String.from_cstring(ptr).clone()
+            end
+        end
+
+    fun this_alivename(): String =>
+        if not connected() then "" else
+            let ptr = @opn_ei_thisalivename(_connection)
+            if ptr.is_null() then "" else
+                String.from_cstring(ptr).clone()
+            end
+        end
 
     fun ref self_pid(): ErlangPid =>
         let buffer: Array[U8] val = recover Array[U8].init(0, /*MAXATOMLEN_UTF8*/ (255*4) + 1 /*null*/) end

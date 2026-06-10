@@ -1,5 +1,6 @@
 use @opn_ei_pid_new[Pointer[None]](node': Pointer[None], num: U32, serial: U32, creation: U32)
 use @opn_ei_pid_destroy[None](_cpid: Pointer[None])
+use @opn_ei_cmp_pids[I32](a: Pointer[None], b: Pointer[None])
 
 class val ErlangPid is Stringable
     let node: String
@@ -18,6 +19,9 @@ class val ErlangPid is Stringable
 
     fun val cpointer(): Pointer[None] val =>
         _cpid
+
+    fun eq(other: ErlangPid): Bool =>
+        @opn_ei_cmp_pids(_cpid, other.cpointer()) == 0
 
     fun box string() : String iso^ =>
         recover

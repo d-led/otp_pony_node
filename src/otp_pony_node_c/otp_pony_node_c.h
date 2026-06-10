@@ -56,6 +56,13 @@ OPN_API void opn_ei_message_destroy (opn_ei_message_t **self_p);
 OPN_API opn_ei_pid_t * opn_ei_pid_new (char const* node, unsigned int num, unsigned int serial_, unsigned int creation);
 OPN_API void opn_ei_pid_destroy (opn_ei_pid_t **self_p);
 
+OPN_API void opn_ei_set_compat_rel(unsigned int rel);
+OPN_API int opn_ei_get_tracelevel(void);
+OPN_API const char * opn_ei_thisnodename(opn_ei_t *self);
+OPN_API const char * opn_ei_thishostname(opn_ei_t *self);
+OPN_API const char * opn_ei_thisalivename(opn_ei_t *self);
+OPN_API int opn_ei_cmp_pids(opn_ei_pid_t const* a, opn_ei_pid_t const* b);
+
 
 #if defined(__cplusplus)
 }

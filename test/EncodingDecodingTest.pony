@@ -10,6 +10,7 @@ class EncodingDecodingTest is TestList
     test(_EncodingRoundtripTest)
     test(_ConstructingMessageFromNullPtr)
     test(_RecursiveDecodingTest)
+    test(_ErlInterfaceHelpersTest)
 
 class iso _EncodingRoundtripTest is UnitTest
   fun name(): String => "encoding a representative message and decoding it"
@@ -144,3 +145,33 @@ class iso _RecursiveDecodingTest is UnitTest
     else
       h.fail("decoded term is not an ErlangTuple")
     end
+
+class iso _ErlInterfaceHelpersTest is UnitTest
+  fun name(): String => "testing erl_interface helper wrappers"
+
+  fun apply(h: TestHelper) =>
+    // 1. Tracelevel
+    let erl = EInterface("pony_test_node", "cookie")
+    erl.set_tracelevel(3)
+    h.assert_eq[I32](erl.get_tracelevel(), 3)
+    erl.set_tracelevel(0)
+    h.assert_eq[I32](erl.get_tracelevel(), 0)
+
+    // 2. Compatibility setting
+    erl.set_compat_rel(26) // Just verify it doesn't crash
+
+    // 3. Node names (unconnected should be empty)
+    h.assert_eq[String](erl.this_nodename(), "")
+    h.assert_eq[String](erl.this_hostname(), "")
+    h.assert_eq[String](erl.this_alivename(), "")
+
+    // 4. Pid comparison
+    let pid1 = ErlangPid.create("node1@localhost", 1, 2, 3)
+    let pid2 = ErlangPid.create("node1@localhost", 1, 2, 3)
+    let pid3 = ErlangPid.create("node2@localhost", 1, 2, 3)
+    let pid4 = ErlangPid.create("node1@localhost", 5, 2, 3)
+
+    h.assert_true(pid1.eq(pid2))
+    h.assert_true(pid2.eq(pid1))
+    h.assert_false(pid1.eq(pid3))
+    h.assert_false(pid1.eq(pid4))

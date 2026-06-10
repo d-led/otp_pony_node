@@ -344,3 +344,38 @@ void opn_ei_pid_destroy(opn_ei_pid_t **self_p)
         *self_p = nullptr;
     }
 }
+
+void opn_ei_set_compat_rel(unsigned int rel)
+{
+    ei_set_compat_rel(rel);
+}
+
+int opn_ei_get_tracelevel(void)
+{
+    return ei_get_tracelevel();
+}
+
+const char * opn_ei_thisnodename(opn_ei_t *self)
+{
+    assert(self);
+    return ei_thisnodename(&self->node);
+}
+
+const char * opn_ei_thishostname(opn_ei_t *self)
+{
+    assert(self);
+    return ei_thishostname(&self->node);
+}
+
+const char * opn_ei_thisalivename(opn_ei_t *self)
+{
+    assert(self);
+    return ei_thisalivename(&self->node);
+}
+
+int opn_ei_cmp_pids(opn_ei_pid_t const* a, opn_ei_pid_t const* b)
+{
+    assert(a);
+    assert(b);
+    return ei_cmp_pids((erlang_pid*)&a->pid, (erlang_pid*)&b->pid);
+}
