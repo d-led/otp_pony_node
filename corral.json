@@ -1,0 +1,14 @@
+{
+  "packages": [
+    "erl_interface_pony"
+  ],
+  "deps": [],
+  "info": {
+    "description": "Pony node to talk to Erlang/Elixir nodes via erl_interface",
+    "homepage": "",
+    "license": "BSD-3-Clause",
+    "documentation_url": "",
+    "version": "0.1.0",
+    "name": "otp_pony_node"
+  }
+}
