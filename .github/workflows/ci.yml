@@ -1,0 +1,43 @@
+name: Native CI Build and Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl
+
+      - name: Set up Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.2'
+          otp-version: '27.2'
+
+      - name: Install ponyup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+          echo "$HOME/.local/share/ponyup/bin" >> $GITHUB_PATH
+
+      - name: Install ponyc
+        run: |
+          ponyup update ponyc release
+          echo "Pony compiler version:"
+          ponyc --version
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Run Tests
+        run: ./test.sh

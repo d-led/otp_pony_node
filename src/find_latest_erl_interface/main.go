@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,7 +13,7 @@ func joinAndNormalizePath(root string, postfix string) string {
 }
 
 func latestPrefixedFolderIn(root string, prefix string) string {
-	dirs, err := ioutil.ReadDir(root)
+	dirs, err := os.ReadDir(root)
 	if err != nil {
 		return ""
 	}

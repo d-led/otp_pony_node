@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker CI Build and Test
 
 on:
   push:
@@ -7,24 +7,24 @@ on:
     branches: [ master ]
 
 jobs:
-
-  build:
-
+  docker-build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    # Pull the latest image to build, and avoid caching pull-only images.
-    # (docker pull is faster than caching in most cases.)
-    - run: docker-compose pull
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # In this step, this action saves a list of existing images,
-    # the cache is created without them in the post run.
-    # It also restores the cache if it exists.
-    - uses: jpribyl/action-docker-layer-caching@v0.1.1
-      # Ignore the failure of a step and avoid terminating the job.
-      continue-on-error: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build the Docker image
-      run: docker-compose up --build
+      - name: Build and cache Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: otp-pony-node:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run tests in Docker
+        run: docker run --rm otp-pony-node:latest

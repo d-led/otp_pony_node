@@ -13,6 +13,16 @@ function find_ei()
         return _OPTIONS["ei"]
     end
 
+    -- Try to query erl first as it is the most reliable cross-platform method.
+    -- This works on Mac, Linux, and Windows if erl is in PATH.
+    local erl_ei_path = exec("erl -eval \"io:format(\\\"~s~n\\\", [code:lib_dir(erl_interface)]), halt().\" -noshell")
+    if erl_ei_path ~= nil and erl_ei_path ~= "" and not erl_ei_path:find("io:format") and not erl_ei_path:find("not found") and not erl_ei_path:find("is not recognized") then
+        local clean_path = erl_ei_path:gsub("^%s*(.-)%s*$", "%1")
+        if clean_path ~= "" then
+            return clean_path
+        end
+    end
+
     -- installed via Homebrew
     if os.target() == "macosx" then
         -- return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
