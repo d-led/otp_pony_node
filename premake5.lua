@@ -15,8 +15,9 @@ function find_ei()
 
     -- Try to query erl first as it is the most reliable cross-platform method.
     -- This works on Mac, Linux, and Windows if erl is in PATH.
-    local erl_ei_path = exec("erl -eval \"io:format(\\\"~s~n\\\", [code:lib_dir(erl_interface)]), halt().\" -noshell")
-    if erl_ei_path ~= nil and erl_ei_path ~= "" and not erl_ei_path:find("io:format") and not erl_ei_path:find("not found") and not erl_ei_path:find("is not recognized") then
+    -- Note: we pass -noshell first to prevent tty/shell initialization crashes on some platforms.
+    local erl_ei_path = exec("erl -noshell -eval \"io:format(\\\"~s~n\\\", [code:lib_dir(erl_interface)]), halt().\"")
+    if erl_ei_path ~= nil and erl_ei_path ~= "" and not erl_ei_path:find("io:format") and not erl_ei_path:find("not found") and not erl_ei_path:find("is not recognized") and not erl_ei_path:find("usage") then
         local clean_path = erl_ei_path:gsub("^%s*(.-)%s*$", "%1")
         if clean_path ~= "" then
             return clean_path
@@ -26,17 +27,21 @@ function find_ei()
     -- installed via Homebrew
     if os.target() == "macosx" then
         -- return "/usr/local/Cellar/erlang/21.2.4/lib/erlang/lib/erl_interface-3.10.4/"
-        local ei_path = exec("ls -td -- /opt/homebrew/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ | head -n 1")
+        local ei_path = exec("ls -td -- /opt/homebrew/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ 2>/dev/null | head -n 1")
         if ei_path ~= nil and ei_path ~= "" then
             return ei_path
         end
-        return exec("ls -td -- /usr/local/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ | head -n 1")
+        return exec("ls -td -- /usr/local/Cellar/erlang/*/lib/erlang/lib/erl_interface-*/ 2>/dev/null | head -n 1")
     end
 
-    -- installed via official instructions
+    -- installed via official instructions / docker image
     if os.target() == "linux" then
         -- return "/usr/lib/erlang/lib/erl_interface-3.10.4/"
-        return exec("ls -td -- /usr/lib/erlang/lib/erl_interface-*/ | head -n 1")
+        local ei_path = exec("ls -td -- /usr/local/lib/erlang/lib/erl_interface-*/ 2>/dev/null | head -n 1")
+        if ei_path ~= nil and ei_path ~= "" then
+            return ei_path
+        end
+        return exec("ls -td -- /usr/lib/erlang/lib/erl_interface-*/ 2>/dev/null | head -n 1")
     end
 
     -- installed via official instructions / chocolatey
