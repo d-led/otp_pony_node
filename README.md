@@ -1,188 +1,122 @@
-# Erlang C Node for the Pony Language (spike/WIP)
+# Erlang C Node for the Pony Language
 
-[![Docker Image CI](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml/badge.svg)](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml)
+[![Native CI Build and Test](https://github.com/d-led/otp_pony_node/actions/workflows/ci.yml/badge.svg)](https://github.com/d-led/otp_pony_node/actions/workflows/ci.yml)
+[![Docker CI Build and Test](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml/badge.svg)](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml)
 
-[![Build Status](https://travis-ci.org/d-led/otp_pony_node.svg?branch=master)](https://travis-ci.org/d-led/otp_pony_node) (old)
+An implementation of Erlang C Nodes in the **Pony** language, allowing you to seamlessly exchange messages between the BEAM (Erlang/Elixir) and Pony runtimes utilizing standard Erlang node communication protocols.
 
-## Motivation
+---
 
-While different [Actor Model](https://www.brianstorti.com/the-actor-model/) implementations may differ in many details,
-transferring the knowledge and design considerations between them is not too hard. An Actor is a unit of concurrency,
-and processes its messages synchronously. A run-time that includes a scheduler and some form of mailboxes
-for the Actors makes sure, the CPU is utilized as desired (which may vary from implementation to implementation).
-Concurrent and distributed software 
-not written with the Actor Model implementation [needs to solve problems]( http://rvirding.blogspot.com/2008/01/virdings-first-rule-of-programming.html), such as safe distribution and scheduling of work onto CPUs/cores,
-granularity of the scheduled computations, work interruption, resource clean-up, fault-tolerance.
+## Installation & Setup (Corral)
 
-Pony and the BEAM (Erlang/Elixir/others) have different design goals and give different guarantees.
-In a project, where the benefits of both need to be utilized, it might be beneficial to simply partition the problem,
-and solve each problem with a dedicated Actor Model implementation. Depending on the use-case and the boundary conditions,
-a different communication channel between the parts of the application can be chosen. This project attempts to provide
-an option to write [Erlang C Nodes]( http://erlang.org/doc/man/ei_connect.html) in Pony to exchange messages between
-the two run-times the Erlang way. There are other options, of course,
-e.g. via ZeroMQ or any other appropriate transport available to both technologies.
+You can add this library as a dependency to your Pony project using **Corral** (the Pony package manager).
 
-A particular sweet spot for Pony is its [built-in FFI](https://tutorial.ponylang.io/c-ffi.html) that doesn’t require
-an extra build system or config, given a shared library can be found. The BEAM has another sweet-spot,
-as it can isolate the failures, timeouts and deadlocks of native code [by means]( http://erlang.org/doc/reference_manual/ports.html)
-of starting native code in another OS process and treating a handle to it as a process (Actor).
-Given a Pony C Node process, connected to a parent Erlang process, utilizing existing native libraries can be simplified without giving up the Actor Model.
+### 1. Add the Dependency
+Inside your project folder, run:
+```bash
+corral add github.com/d-led/otp_pony_node
+corral fetch
+```
+This downloads the source code into your project's local dependency directory (typically `_corral/github_com_d-led_otp_pony_node/`).
 
+### 2. Compile the native C wrapper (`otp_pony_node_c`)
+Since Corral does not run post-install build scripts for compiled native components, you must build the custom C wrapper in the dependency directory.
 
-## POC
-
-- build: OSX, Linux: `./build.sh`, Windows: `build.bat`
-- demo: `./test.sh`
-
-successful POC:
-
-- messages received in Pony
-- messages sent from Pony
-- graceful handling of a failed receive
-- parsing the messages (in progress)
-- encoding new messages (in progress)
-
-```txt
-$ ./otp_pony_node
-Connection successful
-1: ERL_SMALL_TUPLE 2bytes
-3: ERL_PID 0bytes
-29: ERL_BINARY 6bytes
-Received: 100bytes
-pid: demo@localhost
-atom: 7: Hi!
-1: ERL_SMALL_TUPLE 2bytes
-3: ERL_PID 0bytes
-Received: 100bytes
-pid: demo@localhost
-29: ERL_BINARY 6bytes
-atom: 6: Hi!
-Receive failed. Disconnecting
+#### On macOS and Linux:
+Run `make` inside the dependency directory. It dynamically resolves your local Erlang/OTP `erl_interface` path using `erl` and compiles the shared library:
+```bash
+make -C _corral/github_com_d-led_otp_pony_node CONFIG=release
 ```
 
-windows (release mode, messages sent from iex):
-
-```txt
-D:\src\otp_pony_node>otp_pony_node.exe
-Connection successful
-Received: 100bytes
-pid: demo@localhost
-atom: 0: Hi!
-Received: 100bytes
-pid: demo@localhost
-atom: 1: Hi!
-Receive failed. Disconnecting
+#### On Windows:
+Generate the Visual Studio project files and compile with MSBuild:
+```cmd
+cd _corral\github_com_d-led_otp_pony_node
+premake\windows\premake5 vs2022
+msbuild build\windows\vs2022\otp_pony_node.sln /p:Configuration=Release
 ```
 
-## Sending messages to the Pony node from the IEx
+---
 
-```elixir
-$ iex --sname demo@localhost --cookie secretcookie
-iex(demo@localhost)1> {:ok, hostname} = :inet.gethostname
-{:ok, '...'}
-iex(demo@localhost)2> pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
-{:any, :"pony@..."}
-iex(demo@localhost)3> send(pony, {self(),"0: Hi!"})
-{#PID<0.109.0>, "0: Hi!"}
-```
+## Usage in Your Project
 
-## Current API Preview
+### 1. Link the Dependency
+In your `.pony` source files, specify the library paths to tell `ponyc` where to link the native wrapper and locate the Pony bindings:
 
 ```pony
-// connecting
-let erl = EInterface("pony", "secretcookie")
-match erl.connect("demo@localhost")
-| ConnectionFailed => 
-    _env.out.print("Connection failed. Exiting")
-    return
-| ConnectionSucceeded =>
-    _env.out.print("Connection successful")
-end
+// Link the compiled C wrapper shared library
+use "path:_corral/github_com_d-led_otp_pony_node"
+use "lib:otp_pony_node_c"
 
-// receiving a message
-match erl.receive_with_timeout(5_000/*ms*/)
-| ReceiveFailed =>
-    _env.out.print("Receive failed. Disconnecting")
-    erl.disconnect()
-    return
-| ReceiveTimedOut =>
-    _env.out.print("Receive timed out. Disconnecting")
-    erl.disconnect()
-    return
-| let m: EMessage =>
-    handle_message(m)
-end
-
-// handle_message: parsing the message linearly
-(var arity, var pos) = m.tuple_arity_at(m.beginning)
-if arity != 2 then
-    _env.out.print("Didn't expect tuple arity of " + arity.string())
-    return
-end
-
-// print the term type of the token at pos
-m.debug_type_at(pos)
-
-(var pid, pos) = m.pid_at(pos)
-// do something with pid ...
-
-// pos is mutable and gets updated after each successful token parsed
-(let msg, pos) = m.binary_at(pos)
-// do something with msg
-
-// sending a message
-let pid2 = ErlangPid.create("demo@localhost", 97, 0, 3) /* or the received one */
-let m = EMessage.begin()
-m.encode_atom("hello from Pony!")
-erl.send_with_timeout(pid2, m, 500 /*ms*/)
+// Import the erl_interface Pony package
+use "github_com_d-led_otp_pony_node/erl_interface_pony"
 ```
 
-## Backlog
+### 2. Code Example (Pattern Matching Erlang Terms)
+This library features a structured, recursive algebraic representation of Erlang terms (`ErlangTerm`) utilizing Pony's finite recursive type aliases. This allows you to match Erlang terms safely using standard pattern matching:
 
-- expand the API coverage
-  - fill the gaps of encoding/decoding the messages
-  - conform to the C Node protocol
-- higher level API
-  - message builder & reader (hiding away current position)
-- connected testing strategy
-- treat and test the project as a library
-- reconnects / actor interface design?
-- multiple connections per `EInterface`
+```pony
+use "erl_interface_pony"
 
-## Development
+actor PonyNode
+  let erl: EInterface
 
-- Linux, OSX, Windows build config via Premake
-- `vagrant up` if you don't want to install the dependencies yourself
+  new create(env: Env) =>
+    erl = EInterface("pony", "secretcookie")
 
-### Source Structure
+    // Connect to Elixir/Erlang node
+    match erl.connect("demo@localhost")
+    | ConnectionFailed => env.out.print("Connection failed.")
+    | ConnectionSucceeded => env.out.print("Connected!")
+    end
 
-- [erl_interface_pony](erl_interface_pony) the Pony API to `ei_connect`
-- [src/otp_pony_node_c](src/otp_pony_node_c) - a slim wrapper around `ei_connect` (see below)
-- [demo](demo) a Pony "main" spike used to get familiar with the `ei_connect` API and bootstrap the project: connects to an Erlang node and awaits message tuples
-- [demo.exs](demo.exs) the OTP/Elixir counterpart to the Pony demo, which sends the expected messages
-- [build](build) build config generated via premake from [premake5.lua](premake5.lua)
+    receive_loop(env)
 
-## Dependencies
+  be receive_loop(env: Env) =>
+    // Receive message from the C-Node connection
+    match erl.receive_with_timeout(5000)
+    | ReceiveFailed => erl.disconnect()
+    | ReceiveTimedOut => erl.disconnect()
+    | let m: EMessage =>
+      // Decode the raw message buffer into a structured ErlangTerm
+      match ErlangTermDecoder.decode(m)
+      | let root: ErlangTuple =>
+        try
+          // Expecting a tuple format: {Pid, Binary}
+          let pid = root.elements(0)? as ErlangPid
+          let msg = root.elements(1)? as ErlangBinary
+          env.out.print("Received text: " + msg.value + " from " + pid.node)
 
-### ei_connect
+          // Send a reply
+          let r = EMessage.begin()
+          r.encode_tuple_header(3)
+          r.encode_atom("reply")
+          r.encode_binary("hello from Pony!")
+          r.encode_pid(erl.self_pid())
+          erl.send_with_timeout(pid, r, 500)
+        end
+      end
+    end
+    receive_loop(env)
+```
 
-- http://erlang.org/doc/man/ei_connect.html [Apache License 2.0](https://www.erlang.org/about)
-- key API currently in use
-  - `ei_set_tracelevel`
-  - `ei_connect`
-  - `ei_xreceive_msg`
-  - [`ei_decode_*`](http://erlang.org/doc/man/ei.html)
+---
 
-### Pony
+## Local Development & Testing
 
-- https://github.com/ponylang/ponyc [BSD 2-Clause](https://github.com/ponylang/ponyc/blob/master/LICENSE)
+If you are developing this library locally:
 
-### Elixir
+### Requirements
+- **Erlang/OTP** (with `erl_interface` headers/libraries installed).
+- **Elixir** (needed for integration tests).
+- **Pony** (installed via `ponyup`).
 
-- used for the demo
-- https://elixir-lang.org [Apache License 2.0](https://github.com/elixir-lang/elixir/blob/master/LICENSE)
+### Compile & Test
+To build and execute unit and integration tests locally on macOS/Linux:
+```bash
+# Compile C and Pony binaries
+./build.sh
 
-### Premake
-
-- simplified meta-build
-- http://premake.github.io [BSD 3-Clause](https://github.com/premake/premake-core/blob/master/LICENSE.txt)
+# Run unit tests and distributed node demo
+./test.sh
+```
