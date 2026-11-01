@@ -5,8 +5,8 @@
 #   ./docs.sh            build into site/
 #   ./docs.sh --serve    serve it on http://127.0.0.1:8000
 #
-# Needs ponyc (which ships pony-doc), corral, and mkdocs with the material
-# theme: pip install mkdocs-material
+# Needs ponyc (which ships pony-doc), corral, mkdocs with the material theme
+# and a python3 to trim the generated tree: pip install mkdocs-material
 set -euo pipefail
 
 api_pages=docs/api
@@ -17,12 +17,66 @@ mkdir -p "$api_pages" "$work"
 
 # corral puts the dependencies on the module search path, as it does for ponyc.
 corral run -- pony-doc -o "$work" erl_interface_pony
-
-# The generated pages link to the standard library types they mention and to
-# the sources they came from, so the whole tree comes along; the pages the
-# navigation lists are the ones written by hand.
 cp -R "$work/erl_interface_pony-docs/docs/." "$api_pages/"
 rm -rf "$work"
+
+# pony-doc writes a page for every package it type checked, which is the whole
+# standard library.  Only this package's pages and sources are published; the
+# links that pointed at the others go to stdlib.ponylang.io, which serves the
+# same page names.
+python3 - "$api_pages" <<'PY'
+import pathlib
+import re
+import shutil
+import sys
+
+ours = "erl_interface_pony"
+api = pathlib.Path(sys.argv[1])
+sources = api / "src" / ours
+
+for path in api.glob("*.md"):
+    if not path.name.startswith(ours + "-"):
+        path.unlink()
+
+for path in (api / "src").iterdir():
+    if path != sources:
+        shutil.rmtree(path) if path.is_dir() else path.unlink()
+
+page = re.compile(r"\]\((?!src/)([A-Za-z0-9_+-]+)\.md(#[^)]*)?\)")
+source = re.compile(r"\]\(src/([A-Za-z0-9_/+-]+)\.md(#[^)]*)?\)")
+
+
+def to_stdlib(match, prefix):
+    name, anchor = match.group(1), match.group(2) or ""
+    return "](" + prefix + name + "/" + anchor + ")"
+
+
+def rewrite(text):
+    def one_page(match):
+        name, anchor = match.group(1), match.group(2) or ""
+        if name.startswith(ours + "-"):
+            return "](" + name + ".md" + anchor + ")"
+        return to_stdlib(match, "https://stdlib.ponylang.io/")
+
+    def one_source(match):
+        path, anchor = match.group(1), match.group(2) or ""
+        if not path.startswith(ours + "/"):
+            return to_stdlib(match, "https://stdlib.ponylang.io/src/")
+
+        name = path.split("/", 1)[1]
+        if (sources / (name + ".md")).exists():
+            return "](src/" + path + ".md" + anchor + ")"
+
+        # A member this package inherits gets a source link named after this
+        # module and the file that defines it, which is the standard library's.
+        return "](https://stdlib.ponylang.io/src/builtin/" + name + "/" + anchor + ")"
+
+    return source.sub(one_source, page.sub(one_page, text))
+
+
+for path in list(api.glob("*.md")) + list(sources.glob("*.md")):
+    path.write_text(rewrite(path.read_text()))
+PY
 
 if [ "${1:-}" = "--serve" ]; then
   exec mkdocs serve
