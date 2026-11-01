@@ -14,8 +14,9 @@ Save this as `demo.exs`:
 
 ```elixir
 {:ok, hostname} = :inet.gethostname
-pony = {:any, :"pony@#{hostname}"}
-
+# The node is named after the machine's host name without its domain.
+host = hostname |> to_string() |> String.downcase() |> String.split(".") |> hd()
+pony = {:any, :"pony@#{host}"}
 # The Pony program connects after it starts, so give it a moment.
 Process.sleep(2_000)
 

@@ -5,8 +5,12 @@ defmodule Demo do
     def run(0), do: :done
 
     def run(tries) do
+        # A node of this library is named after the machine's host name
+        # without its domain, in lower case; the kernel may answer with the
+        # domain, so it is cut here as well.
         {:ok, hostname} = :inet.gethostname
-        pony = {:any, :"pony@#{String.downcase("#{hostname}")}"}
+        host = hostname |> to_string() |> String.downcase() |> String.split(".") |> hd()
+        pony = {:any, :"pony@#{host}"}
         IO.inspect(pony, label: "Elixir: pony destination")
         send(pony, {self(),"#{tries}: Hi!"})
         receive do
