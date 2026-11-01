@@ -97,4 +97,7 @@ jobs:
 
             wait "$runner" || true
             grep -E 'tests ran|Passed:|FAILED' "/tmp/tests.$attempt.log" | tail -3
+            if grep -q FAILED "/tmp/tests.$attempt.log"; then
+              cat "/tmp/tests.$attempt.log"
+            fi
           done

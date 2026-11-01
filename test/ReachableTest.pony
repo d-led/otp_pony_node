@@ -24,8 +24,9 @@ actor _CallingNode
   """
   Another node connecting in, as an Erlang node would.
 
-  The handshake needs both ends moving at once, so the caller runs in an actor
-  while the test accepts.
+  The connect is bounded: a caller that cannot finish the handshake stops
+  waiting instead of holding the node it was made from, and the process wide
+  lock the C library needs, for as long as the peer stays silent.
   """
 
   let _name: String
@@ -44,10 +45,11 @@ actor _CallingNode
   be call() =>
     let node = EInterface(_name, "cookie")
 
-    match node.connect(_target)
+    match node.connect_with_timeout(_target, 10_000)
     | ConnectionFailed =>
       _h.fail("a caller could not reach the server ("
         + node.last_error() + ")")
+      _h.complete(false)
       return
     | ConnectionSucceeded => None
     end
@@ -67,6 +69,7 @@ actor _CallingNode
       | SentOk => None
       else
         _h.fail("the call did not go out")
+        _h.complete(false)
         return
       end
 
@@ -83,9 +86,14 @@ actor _CallingNode
           _h.complete(true)
         else
           _h.fail("the answer was not {reply, Binary, Pid}")
+          _h.complete(false)
         end
-      | ReceiveTimedOut => _h.fail("no answer came back")
-      | ReceiveFailed => _h.fail("the connection to the server broke")
+      | ReceiveTimedOut =>
+        _h.fail("no answer came back")
+        _h.complete(false)
+      | ReceiveFailed =>
+        _h.fail("the connection to the server broke")
+        _h.complete(false)
       end
     end
 
@@ -127,6 +135,127 @@ class iso _PublishOnceTest is UnitTest
     node.dispose()
     h.assert_eq[U32](0, node.published_port())
 
+actor _AnsweringNode
+  """
+  Publishes itself, invites a caller in, and answers what it says.
+
+  The waiting happens here rather than in `apply`, because `apply` runs on the
+  test runner's thread: an actor that was only told to call in waits for a
+  scheduler to pick it up, and with the runner's thread taken by the accept,
+  the call would wait for the accept that waits for the call.
+  """
+
+  let _h: TestHelper
+  let _caller_name: String
+  let _text: String
+
+  new create(h: TestHelper, caller_name: String, text: String) =>
+    _h = h
+    _caller_name = caller_name
+    _text = text
+
+  be serve() =>
+    let node = EInterface("pony_test_server", "cookie")
+
+    match node.publish(0)
+    | Published => None
+    else
+      _NeedsEpmd.fail(_h, node)
+      _h.complete(false)
+      return
+    end
+
+    _CallingNode(_caller_name, node.this_nodename(), _h, _text).call()
+
+    match node.accept_with_timeout(15_000)
+    | let connection: EInterface =>
+      _h.assert_true(connection.peer_nodename().contains(_caller_name),
+        "the accepted connection knows who called")
+
+      answer(connection)
+      connection.dispose()
+    | AcceptTimedOut =>
+      _h.fail("nobody was accepted")
+      _h.complete(false)
+    | AcceptFailed =>
+      _h.fail("accepting failed (" + node.last_error() + ")")
+      _h.complete(false)
+    end
+
+    node.dispose()
+
+  fun ref answer(connection: EInterface) =>
+    match connection.receive_with_timeout(10_000)
+    | let message: EMessage =>
+      match ErlangShapes.pair(ErlangTermDecoder.decode(message))
+      | (let sender: ErlangPid, let text: ErlangBinary) =>
+        _h.assert_eq[String](_text, text.value)
+
+        let body: Array[ErlangTerm] val = [
+          ErlangAtom("reply")
+          ErlangBinary("pong: " + text.value)
+          sender
+        ]
+        let reply = EMessage.begin()
+        try reply.encode(ErlangTuple(body))? end
+        connection.send_to(sender, reply, 500)
+      else
+        _h.fail("the call was not {Pid, Binary}")
+        _h.complete(false)
+      end
+    | ReceiveTimedOut =>
+      _h.fail("the call never arrived")
+      _h.complete(false)
+    | ReceiveFailed =>
+      _h.fail("the accepted connection broke")
+      _h.complete(false)
+    end
+
+actor _NodeThatOutlivesItsPublisher
+  """
+  Publishes itself, invites a caller in, and then lets go of the interface
+  that published the node while the accepted connection is still in use.
+  """
+
+  let _h: TestHelper
+  let _caller_name: String
+
+  new create(h: TestHelper, caller_name: String) =>
+    _h = h
+    _caller_name = caller_name
+
+  be serve() =>
+    let node = EInterface("pony_test_shared", "cookie")
+
+    match node.publish(0)
+    | Published => None
+    else
+      _NeedsEpmd.fail(_h, node)
+      _h.complete(false)
+      return
+    end
+
+    _CallingNode(_caller_name, node.this_nodename(), _h).call()
+
+    match node.accept_with_timeout(15_000)
+    | let connection: EInterface =>
+      let published_name = node.this_nodename()
+
+      node.dispose()
+
+      _h.assert_eq[String](published_name, connection.this_nodename(),
+        "the node outlives the interface that published it")
+
+      connection.dispose()
+      _h.complete(true)
+    | AcceptTimedOut =>
+      _h.fail("nobody was accepted")
+      _h.complete(false)
+    | AcceptFailed =>
+      _h.fail("accepting failed (" + node.last_error() + ")")
+      _h.complete(false)
+    end
+
 class iso _CallFromAnotherNodeTest is UnitTest
   """
   The server answers what a caller sends, so both directions are seen working
@@ -136,82 +265,12 @@ class iso _CallFromAnotherNodeTest is UnitTest
   fun name(): String => "a node answers a call from another node"
 
   fun apply(h: TestHelper) =>
-    let server = EInterface("pony_test_server", "cookie")
-
-    match server.publish(0)
-    | Published => None
-    else
-      _NeedsEpmd.fail(h, server)
-      return
-    end
-
-    h.long_test(20_000_000_000)
-    _CallingNode("pony_test_caller", server.this_nodename(), h,
-      "hi from a calling node").call()
-
-    match server.accept_with_timeout(10_000)
-    | let connection: EInterface =>
-      h.assert_true(connection.peer_nodename().contains("pony_test_caller"),
-        "the accepted connection knows who called")
-
-      match connection.receive_with_timeout(10_000)
-      | let message: EMessage =>
-        match ErlangShapes.pair(ErlangTermDecoder.decode(message))
-        | (let sender: ErlangPid, let text: ErlangBinary) =>
-          h.assert_eq[String]("hi from a calling node", text.value)
-
-          let body: Array[ErlangTerm] val = [
-            ErlangAtom("reply")
-            ErlangBinary("pong: " + text.value)
-            sender
-          ]
-          let answer = EMessage.begin()
-          try answer.encode(ErlangTuple(body))? end
-          connection.send_to(sender, answer, 500)
-        else h.fail("the call was not {Pid, Binary}")
-        end
-      | ReceiveTimedOut => h.fail("the call never arrived")
-      | ReceiveFailed => h.fail("the accepted connection broke")
-      end
-
-      connection.dispose()
-    | AcceptTimedOut => h.fail("nobody was accepted")
-    | AcceptFailed => h.fail("accepting failed (" + server.last_error() + ")")
-    end
-
-    server.dispose()
+    h.long_test(30_000_000_000)
+    _AnsweringNode(h, "pony_test_caller", "hi from a calling node").serve()
 
 class iso _AcceptedConnectionSharesTheNodeTest is UnitTest
   fun name(): String => "an accepted connection keeps its node alive"
 
   fun apply(h: TestHelper) =>
-    let server = EInterface("pony_test_shared", "cookie")
-
-    match server.publish(0)
-    | Published => None
-    else
-      _NeedsEpmd.fail(h, server)
-      return
-    end
-
-    h.long_test(20_000_000_000)
-    _CallingNode("pony_test_shared_caller", server.this_nodename(), h).call()
-
-    match server.accept_with_timeout(10_000)
-    | let connection: EInterface =>
-      let published_name = server.this_nodename()
-
-      server.dispose()
-
-      h.assert_eq[String](published_name, connection.this_nodename(),
-        "the node outlives the interface that published it")
-
-      connection.dispose()
-      h.complete(true)
-    | AcceptTimedOut =>
-      h.fail("nobody was accepted")
-      h.complete(false)
-    | AcceptFailed =>
-      h.fail("accepting failed (" + server.last_error() + ")")
-      h.complete(false)
-    end
+    h.long_test(30_000_000_000)
+    _NodeThatOutlivesItsPublisher(h, "pony_test_shared_caller").serve()
