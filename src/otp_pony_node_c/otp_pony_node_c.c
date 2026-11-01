@@ -7,6 +7,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
+/* erl_interface keeps process wide state and builds it on first use: the node
+ * a Pony program is seen as, and the mutexes its host name lookups take.
+ * Two actors creating a node at the same moment entered that setup at once and
+ * left one of them waiting for a lock nothing would release.  Creation and
+ * connection take this lock so that ei is never entered for the first time
+ * from two threads. */
+#if defined(_WIN32)
+static SRWLOCK opn_ei_lock = SRWLOCK_INIT;
+static void opn_ei_lock_acquire(void) { AcquireSRWLockExclusive(&opn_ei_lock); }
+static void opn_ei_lock_release(void) { ReleaseSRWLockExclusive(&opn_ei_lock); }
+#else
+static pthread_mutex_t opn_ei_lock = PTHREAD_MUTEX_INITIALIZER;
+static void opn_ei_lock_acquire(void) { pthread_mutex_lock(&opn_ei_lock); }
+static void opn_ei_lock_release(void) { pthread_mutex_unlock(&opn_ei_lock); }
+#endif
+
 struct _opn_ei_t
 {
     ei_cnode cnode;
@@ -89,17 +111,22 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie,
                      unsigned creation)
 {
     opn_ei_t *self;
+    int initialised;
 
     if (!this_nodename || !cookie)
         return NULL;
-
-    ei_init();
 
     self = (opn_ei_t *)calloc(1, sizeof(*self));
     if (!self)
         return NULL;
 
-    if (ei_connect_init(&self->cnode, this_nodename, cookie, creation) < 0) {
+    opn_ei_lock_acquire();
+    ei_init();
+    initialised =
+        ei_connect_init(&self->cnode, this_nodename, cookie, creation);
+    opn_ei_lock_release();
+
+    if (initialised < 0) {
         free(self);
         return NULL;
     }
@@ -114,18 +141,30 @@ void opn_ei_destroy(opn_ei_t *self)
 
 int opn_ei_connect(opn_ei_t *self, const char *nodename)
 {
+    int connection;
+
     if (!self || !nodename)
         return -1;
 
-    return ei_connect(&self->cnode, (char *)nodename);
+    opn_ei_lock_acquire();
+    connection = ei_connect(&self->cnode, (char *)nodename);
+    opn_ei_lock_release();
+
+    return connection;
 }
 
 int opn_ei_connect_tmo(opn_ei_t *self, const char *nodename, unsigned ms)
 {
+    int connection;
+
     if (!self || !nodename)
         return -1;
 
-    return ei_connect_tmo(&self->cnode, (char *)nodename, ms);
+    opn_ei_lock_acquire();
+    connection = ei_connect_tmo(&self->cnode, (char *)nodename, ms);
+    opn_ei_lock_release();
+
+    return connection;
 }
 
 int opn_ei_close_connection(int fd)
