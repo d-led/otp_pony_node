@@ -54,42 +54,47 @@ jobs:
           epmd -names || true
 
       - name: Run the tests with a watchdog
-        timeout-minutes: 10
+        timeout-minutes: 30
         run: |
           set -uo pipefail
 
-          ./test.sh > /tmp/tests.log 2>&1 &
-          runner=$!
+          for attempt in 1 2 3 4 5; do
+            echo "=== attempt $attempt ==="
+            ./test.sh > "/tmp/tests.$attempt.log" 2>&1 &
+            runner=$!
 
-          for _ in $(seq 1 45); do
-            if ! kill -0 "$runner" 2>/dev/null; then
-              wait "$runner" || true
-              cat /tmp/tests.log
-              echo 'the suite ended by itself'
-              exit 0
+            for _ in $(seq 1 30); do
+              if ! kill -0 "$runner" 2>/dev/null; then
+                break
+              fi
+              sleep 2
+            done
+
+            if kill -0 "$runner" 2>/dev/null; then
+              echo '=== stalled: the tests so far ==='
+              tail -20 "/tmp/tests.$attempt.log"
+
+              pid=$(pgrep -n -f otp_pony_node_test)
+              echo "=== process $pid, one line per thread ==="
+              ps -L -o pid,tid,stat,wchan:38,comm -p "$pid" || true
+
+              echo '=== the kernel call each thread sits in ==='
+              for task in /proc/"$pid"/task/*; do
+                printf '%s %s\n' "$(basename "$task")" "$(cat "$task/wchan" 2>/dev/null)"
+              done
+
+              echo '=== epmd ==='
+              epmd -names || true
+              ss -ltnp | head -20 || true
+
+              echo '=== C stacks ==='
+              sudo apt-get install -y gdb >/dev/null 2>&1 || true
+              sudo timeout 120 gdb -q -batch -p "$pid" -ex 'thread apply all bt' 2>&1 | tail -120
+
+              kill -9 "$pid" || true
+              exit 1
             fi
-            sleep 2
+
+            wait "$runner" || true
+            grep -E 'tests ran|Passed:|FAILED' "/tmp/tests.$attempt.log" | tail -3
           done
-
-          echo '=== stalled: the tests so far ==='
-          tail -20 /tmp/tests.log
-
-          pid=$(pgrep -n -f otp_pony_node_test)
-          echo "=== process $pid, one line per thread ==="
-          ps -L -o pid,tid,stat,wchan:38,comm -p "$pid" || true
-
-          echo '=== the kernel call each thread sits in ==='
-          for task in /proc/"$pid"/task/*; do
-            printf '%s %s\n' "$(basename "$task")" "$(cat "$task/wchan" 2>/dev/null)"
-          done
-
-          echo '=== epmd ==='
-          epmd -names || true
-          ss -ltnp | head -20 || true
-
-          echo '=== C stacks ==='
-          sudo apt-get install -y gdb >/dev/null 2>&1 || true
-          sudo timeout 120 gdb -q -batch -p "$pid" -ex 'thread apply all bt' 2>&1 | tail -120
-
-          kill -9 "$pid" || true
-          exit 1
