@@ -37,12 +37,32 @@ fi
 
 echo "the Pony node answered the Elixir node"
 
-# The Pony node is called in, and answers.
+# The Pony node is called in, and answers.  The name it published is read back
+# from its own report, since the case of a host name is spelled one way by the
+# node and another by whoever looks it up.
 ./otp_pony_node --listen "$port" > "$pony_log" 2>&1 &
 pony_pid=$!
 
-sleep 2
-if ! elixir --sname caller@localhost --cookie secretcookie incoming.exs; then
+wait_for_the_node_to_listen() {
+  local attempts=50
+  while [ "$attempts" -gt 0 ]; do
+    if grep -q " listening on port " "$pony_log"; then return 0; fi
+    sleep 0.2
+    attempts=$((attempts - 1))
+  done
+  return 1
+}
+
+if ! wait_for_the_node_to_listen; then
+  echo "the Pony node did not publish itself:" >&2
+  cat "$pony_log" >&2
+  exit 1
+fi
+
+pony_node=$(sed -n 's/^Pony: \(.*\) listening on port .*$/\1/p' "$pony_log" | head -1)
+echo "the Pony node is $pony_node"
+
+if ! elixir --sname caller@localhost --cookie secretcookie incoming.exs "$pony_node"; then
   echo "the Elixir node could not call the Pony node:" >&2
   cat "$pony_log" >&2
   exit 1
