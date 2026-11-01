@@ -260,6 +260,12 @@ runner.
 `./demo_exs.sh` runs the Elixir side of the demo in the foreground; run
 `./otp_pony_node` from another terminal to watch the exchange.
 
+The documentation site is `./docs.sh`: it runs `pony-doc` through corral (as
+the [Pony documentation](https://www.ponylang.io/use/documentation/) describes)
+and builds the pages in `docs/` with the generated reference.  For an agent,
+`corral run -- pony-agent-server .` answers questions about the package from
+the compiler itself.
+
 The native part is CMake, with presets in `CMakePresets.json`:
 
 ```bash

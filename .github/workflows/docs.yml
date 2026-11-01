@@ -40,7 +40,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install mkdocs
-        run: pip install mkdocs-material
+        run: pip install mkdocs-material "pygments>=2.7"
 
       - name: Build
         run: ./docs.sh

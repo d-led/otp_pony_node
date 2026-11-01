@@ -25,5 +25,14 @@ not_in_nav: |
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  # Pygments carries a Pony lexer, so a ```pony block is highlighted without
+  # anything of ours; plain fenced_code would leave it uncoloured.
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - attr_list
   - toc:
       permalink: true
