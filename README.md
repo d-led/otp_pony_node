@@ -10,7 +10,7 @@ Beta. Expect breaking changes.
 ## Installation
 
 * Install [corral](https://github.com/ponylang/corral)
-* `corral add github.com/d-led/otp_pony_node.git --version 0.2.0`
+* `corral add github.com/d-led/otp_pony_node.git --version 0.3.0`
 * `corral fetch` to fetch your dependencies
 * `use "erl_interface_pony"` to include this package
 * `corral run -- ponyc` to compile your application
@@ -163,6 +163,35 @@ aligned bitstring is a binary in the external format, so it decodes as
 `ErlangBinary`. Unused bits in the last byte of a partial bitstring are cleared
 on construction, which is what the format carries.
 
+## Reading a message
+
+Pony matches on types and not on values, so a message is read by naming the
+types its elements must have. A decoder is the one place that does it, and
+handlers then work with a value of their own:
+
+```pony
+primitive CallDecoder
+  """A `{Pid, Binary}` call, or `None` for anything else."""
+
+  fun apply(message: EMessage ref): (Call | None) =>
+    match ErlangTermDecoder.decode(message)
+    | let term: ErlangTerm =>
+      match ErlangShapes.pair(term)
+      | (let sender: ErlangPid, let text: ErlangBinary) =>
+        Call(sender, text.value)
+      else None
+      end
+    else None
+    end
+```
+
+`ErlangShapes.pair` and `ErlangShapes.triple` hand back the leading elements of
+a tuple, so one `match` binds each of them with its type; a term of any other
+shape falls to `else`. Reading inside a term is total too:
+`ErlangTuple.at(index)`, `ErlangList.at(index)` and `ErlangMap.get(key)` answer
+`None` rather than raising, and `ErlangTerms.is_atom(term, "reply")` compares a
+tag.
+
 ## Limitations
 
 * Links, monitors and exit signals reach the node but are not modelled. Only
@@ -171,6 +200,9 @@ on construction, which is what the format carries.
 * Terms decode recursively, so a very deep term from an untrusted peer can
   exhaust the stack.
 * `ErlangOpaque` terms can be forwarded, not inspected.
+* The C library keeps process wide state, so creating a node and connecting
+  take a process wide lock. Sending from two nodes at the same time has not
+  been shown to be safe.
 
 ## API Documentation
 

@@ -43,30 +43,27 @@ actor PonyNode
     receive_loop()
 
   fun ref answer(message: EMessage ref) =>
-    match ErlangTermDecoder.decode(message)
-    | let call: ErlangTuple => reply_to(call)
+    match CallDecoder(message)
+    | let call: Call => reply_to(call)
     else
-      _env.out.print("Pony: not a tuple, ignoring it")
+      _env.out.print("Pony: not a {Pid, Binary} call, ignoring it")
     end
 
-  fun ref reply_to(call: ErlangTuple) =>
+  fun ref reply_to(call: Call) =>
+    _env.out.print("Pony: \"" + call.text + "\" from " + call.sender.string())
+
+    _reply_number = _reply_number + 1
+    let reply: Array[ErlangTerm] val = [
+      ErlangAtom("reply")
+      ErlangBinary("hello from Pony " + _reply_number.string() + "!")
+      call.sender
+    ]
+
     try
-      let sender = call.elements(0)? as ErlangPid
-      let text = call.elements(1)? as ErlangBinary
-      _env.out.print("Pony: \"" + text.value + "\" from " + sender.string())
-
-      _reply_number = _reply_number + 1
-      let self_pid = _erl.self_pid()?
-      let reply: Array[ErlangTerm] val = [
-        ErlangAtom("reply")
-        ErlangBinary("hello from Pony " + _reply_number.string() + "!")
-        self_pid
-      ]
-
       let encoded = EMessage.begin()
       encoded.encode(ErlangTuple(reply))?
 
-      match _erl.send_to(sender, encoded, 500)
+      match _erl.send_to(call.sender, encoded, 500)
       | SentOk => None
       | SendFailed =>
         _env.out.print("Pony: the reply did not go out (" + _erl.last_error() + ")")
@@ -74,7 +71,32 @@ actor PonyNode
         _env.out.print("Pony: sending the reply timed out")
       end
     else
-      _env.out.print("Pony: that was not a {Pid, Binary} call")
+      _env.out.print("Pony: the reply could not be built")
+    end
+
+class val Call
+  """
+  A `{Pid, Binary}` call, decoded once so that no handler deals in terms.
+  """
+  let sender: ErlangPid
+  let text: String
+
+  new val create(sender': ErlangPid, text': String) =>
+    sender = sender'
+    text = text'
+
+primitive CallDecoder
+  """One place where the shape of a message is checked."""
+
+  fun apply(message: EMessage ref): (Call | None) =>
+    match ErlangTermDecoder.decode(message)
+    | let term: ErlangTerm =>
+      match ErlangShapes.pair(term)
+      | (let sender: ErlangPid, let text: ErlangBinary) =>
+        Call(sender, text.value)
+      else None
+      end
+    else None
     end
 
 actor Main
