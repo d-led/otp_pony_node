@@ -252,6 +252,10 @@ Letting go of the node closes the socket it listened on, so it cannot be called
 any more. The name belongs to epmd, which holds it until the process ends, so
 one process publishes a given name once.
 
+`./otp_pony_node --listen 47_002` serves as a demo of this; the
+[being called](https://d-led.github.io/otp_pony_node/reachable/) page shows the
+Elixir side.
+
 ## Limitations
 
 * Links, monitors and exit signals reach the node but are not modelled. Only

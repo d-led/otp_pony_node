@@ -90,6 +90,28 @@ else None
 end
 ```
 
+## Trying it
+
+`demo/main.pony` has both directions. Build it, then serve:
+
+```bash
+./build.sh
+./otp_pony_node --listen 47_002
+```
+
+It prints the name it published and waits for a call. From Elixir, with the
+same cookie and a node name on the same host:
+
+```elixir
+# iex --sname caller@yourhost --cookie secretcookie
+send({:any, :"pony_server@yourhost"}, {self(), "hi"})
+flush()
+# {:reply, "pong from a reachable node: hi", #PID<...>}
+```
+
+`integration.sh` runs exactly that against the demo in both directions, and
+fails if either exchange does not happen.
+
 ## Before it works
 
 Publishing needs epmd, the port mapper that Erlang starts for itself. A machine

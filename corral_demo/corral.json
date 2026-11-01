@@ -3,7 +3,7 @@
   "deps": [
     {
       "locator": "github.com/d-led/otp_pony_node.git",
-      "version": "master"
+      "version": "0.7.0"
     }
   ],
   "info": {
