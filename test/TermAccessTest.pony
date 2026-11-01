@@ -13,6 +13,9 @@ class TermAccessTest is TestList
     test(_ListTailIsNotAnElementTest)
     test(_MapLookupTest)
     test(_MapKeysMatchByValueTest)
+    test(_BinaryKeyLookupTest)
+    test(_AtomKeyLookupTest)
+    test(_KeyKindsDoNotMixTest)
 
 class iso _TupleElementAtTest is UnitTest
   fun name(): String => "a tuple gives the element at an index it has"
@@ -93,3 +96,40 @@ class iso _MapKeysMatchByValueTest is UnitTest
     | let value: ErlangBinary => h.assert_true(value.value == "found")
     else h.fail("a structurally equal key finds its value")
     end
+
+class iso _BinaryKeyLookupTest is UnitTest
+  fun name(): String => "a map keyed by binaries reads back by name"
+
+  fun apply(h: TestHelper) =>
+    let map = ErlangMap.binary_keyed([("timeout", ErlangInteger(7))])
+
+    match ErlangValues.integer(map.get_binary("timeout"))
+    | let value: I64 => h.assert_eq[I64](7, value)
+    else h.fail("the key timeout is there and holds an integer")
+    end
+
+    h.assert_true(map.get_binary("missing") is None, "an absent key gives nothing")
+
+class iso _AtomKeyLookupTest is UnitTest
+  fun name(): String => "a map keyed by atoms reads back by name"
+
+  fun apply(h: TestHelper) =>
+    let map = ErlangMap.atom_keyed([("count", ErlangInteger(3))])
+
+    match ErlangValues.integer(map.get_atom("count"))
+    | let value: I64 => h.assert_eq[I64](3, value)
+    else h.fail("the key count is there and holds an integer")
+    end
+
+    h.assert_true(map.get_atom("missing") is None, "an absent key gives nothing")
+
+class iso _KeyKindsDoNotMixTest is UnitTest
+  fun name(): String => "a binary key and an atom of one name are two keys"
+
+  fun apply(h: TestHelper) =>
+    let binaries = ErlangMap.binary_keyed([("timeout", ErlangInteger(7))])
+
+    h.assert_true(binaries.get_atom("timeout") is None,
+      "asking as an atom does not find a binary key")
+    h.assert_true(binaries.get_binary("timeout") isnt None,
+      "asking as a binary does")

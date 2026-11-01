@@ -224,6 +224,27 @@ class val ErlangMap is (Equatable[ErlangMap] & Hashable)
   new val create(pairs': Array[(ErlangTerm, ErlangTerm)] val) =>
     pairs = pairs'
 
+  new val binary_keyed(entries: Array[(String, ErlangTerm)] val) =>
+    """
+    A map whose keys are binaries, which is how Elixir writes
+    `%{"timeout" => 5000}`.
+    """
+    let built: Array[(ErlangTerm, ErlangTerm)] trn =
+      recover trn Array[(ErlangTerm, ErlangTerm)] end
+    for (key, value) in entries.values() do
+      built.push((ErlangBinary(key), value))
+    end
+    pairs = consume built
+
+  new val atom_keyed(entries: Array[(String, ErlangTerm)] val) =>
+    """A map whose keys are atoms: `#{timeout => 5000}`."""
+    let built: Array[(ErlangTerm, ErlangTerm)] trn =
+      recover trn Array[(ErlangTerm, ErlangTerm)] end
+    for (key, value) in entries.values() do
+      built.push((ErlangAtom(key), value))
+    end
+    pairs = consume built
+
   fun size(): USize => pairs.size()
 
   fun eq(that: box->ErlangMap): Bool =>
@@ -248,6 +269,19 @@ class val ErlangMap is (Equatable[ErlangMap] & Hashable)
       if ErlangTerms.eq(candidate, key) then return value end
     end
     None
+
+  fun get_binary(key: String): (ErlangTerm | None) =>
+    """
+    The value under the binary `key`, which is how Elixir writes map keys.
+
+    A binary and an atom of the same name are different keys, so this finds
+    nothing in a map keyed by atoms.
+    """
+    get(ErlangBinary(key))
+
+  fun get_atom(key: String): (ErlangTerm | None) =>
+    """The value under the atom `key`, e.g. `#{timeout => 5000}`."""
+    get(ErlangAtom(key))
 
 class val ErlangPort is (Equatable[ErlangPort] & Hashable)
   """A port identifier."""

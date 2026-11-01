@@ -10,7 +10,7 @@ Beta. Expect breaking changes.
 ## Installation
 
 * Install [corral](https://github.com/ponylang/corral)
-* `corral add github.com/d-led/otp_pony_node.git --version 0.4.0`
+* `corral add github.com/d-led/otp_pony_node.git --version 0.5.0`
 * `corral fetch` to fetch your dependencies
 * `use "erl_interface_pony"` to include this package
 * `corral run -- ponyc` to compile your application
@@ -205,7 +205,7 @@ that follows stay one expression:
 
 ```pony
 let timeout: I64 =
-  match ErlangValues.integer(config.get(ErlangBinary("timeout")))
+  match ErlangValues.integer(config.get_binary("timeout"))
   | let found: I64 => found
   | None => 5_000   // no such key, or a value of another kind
   end
@@ -213,6 +213,12 @@ let timeout: I64 =
 
 `atom_name`, `bytes`, `chars`, `integer`, `float` and `pid` each answer `None`
 for a term of another kind, so the value is never cast and never raises.
+
+Keys come in two kinds, and a lookup says which one it means:
+`get_binary("timeout")` finds `%{"timeout" => 5000}`, `get_atom("timeout")`
+finds `#{timeout => 5000}`, and `get` takes any term as the key.
+`ErlangMap.binary_keyed` and `ErlangMap.atom_keyed` build the first two from
+Pony strings.
 
 ## Limitations
 
