@@ -138,7 +138,6 @@ build-debug/
 build-zig/
 build-zig-debug/
 libotp_pony_node_c.a
-corral_demo/libotp_pony_node_c.a
 demo.log
 
 ### macOS ###
