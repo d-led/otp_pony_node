@@ -2,7 +2,7 @@
   "locks": [
     {
       "locator": "github.com/d-led/otp_pony_node.git",
-      "revision": "0.7.0"
+      "revision": "0.7.1"
     }
   ]
 }
