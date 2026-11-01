@@ -38,8 +38,17 @@ endif()
 
 find_path(OPN_EI_INCLUDE_DIR ei.h
     HINTS "${OPN_EI_DIR}/include")
-find_library(OPN_EI_LIBRARY NAMES ei
+
+# The archive, not the shared library: a distribution that ships both would
+# otherwise have find_library pick the shared one, and merging needs members.
+find_file(OPN_EI_ARCHIVE NAMES libei.a libei.lib
     HINTS "${OPN_EI_DIR}/lib")
+if(OPN_EI_ARCHIVE)
+    set(OPN_EI_LIBRARY "${OPN_EI_ARCHIVE}")
+else()
+    find_library(OPN_EI_LIBRARY NAMES ei
+        HINTS "${OPN_EI_DIR}/lib")
+endif()
 
 if(NOT OPN_EI_INCLUDE_DIR OR NOT OPN_EI_LIBRARY)
     message(FATAL_ERROR
