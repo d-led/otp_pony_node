@@ -1,40 +1,44 @@
 use "erl_interface_pony"
+
+// The native archive is built in the dependency directory by run_demo.sh.
 use "path:_corral/github_com_d_led_otp_pony_node"
 
 actor Main
+  """
+  Shows the library as a Corral dependency: no Elixir node needed, just terms.
+  """
+
   new create(env: Env) =>
-    env.out.print("Corral Demo: Initializing EInterface...")
-    
-    // Initialize node interface
-    let erl = EInterface("pony_demo_node", "secretcookie")
-    
-    // Demonstrate building, encoding, and recursively decoding Erlang terms
-    let m = EMessage.begin()
-    if not m.valid() then
-      env.out.print("Error: EMessage is invalid")
+    let call: Array[ErlangTerm] val = [
+      ErlangAtom("demo_hello")
+      ErlangBinary("hello from a corral dependency!")
+    ]
+    let term: ErlangTerm = ErlangTuple(call)
+    env.out.print("Encoding " + ErlangTermPrinter.string(term))
+
+    let encoded = EMessage.begin()
+
+    try
+      encoded.encode(term)?
+    else
+      env.out.print("encoding failed")
+      env.exitcode(1)
       return
     end
-    
-    // Structure: {"demo_hello", "hello from corral dependency!"}
-    m.encode_tuple_header(2)
-    m.encode_atom("demo_hello")
-    m.encode_binary("hello from corral dependency!")
-    
-    env.out.print("Corral Demo: Decoding encoded ErlangTerm...")
-    match ErlangTermDecoder.decode(m)
-    | let root_tuple: ErlangTuple =>
-      env.out.print("Decoded root tuple with " + root_tuple.elements.size().string() + " elements:")
+
+    env.out.print("Encoded " + encoded.length().string() + " bytes")
+
+    match ErlangTermDecoder.decode(encoded)
+    | let decoded: ErlangTuple =>
+      env.out.print("Decoded " + ErlangTermPrinter.string(decoded))
+
       try
-        match root_tuple.elements(0)?
-        | let a: ErlangAtom =>
-          env.out.print("  - Element 0 (Atom): " + a.name)
-        end
-        
-        match root_tuple.elements(1)?
-        | let b: ErlangBinary =>
-          env.out.print("  - Element 1 (Binary): " + b.value)
-        end
+        let name = decoded.elements(0)? as ErlangAtom
+        let text = decoded.elements(1)? as ErlangBinary
+        env.out.print("  atom:   " + name.name)
+        env.out.print("  binary: " + text.value)
       end
     else
-      env.out.print("Error: failed to decode ErlangTerm")
+      env.out.print("decoding failed")
+      env.exitcode(1)
     end

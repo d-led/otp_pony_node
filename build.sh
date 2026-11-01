@@ -1,36 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Builds the native shim and the Pony programs.
+#
+#   ./build.sh            release build
+#   ./build.sh --debug    debug build
 set -euo pipefail
-IFS=$'\n\t'
 
-case "$(uname)" in
-  Darwin)
-    os="macosx"
-  ;;
+build_type=Release
 
-  Linux)
-    os="linux"
-    export PATH=/root/.local/share/ponyup/bin:$PATH
-  ;;
+for argument in "$@"; do
+  case "$argument" in
+    -d|--debug) build_type=Debug ;;
+    -h|--help)
+      echo "usage: $0 [--debug]"
+      exit 0
+      ;;
+    *)
+      echo "unknown option: $argument" >&2
+      exit 2
+      ;;
+  esac
+done
 
-  *)
-    echo $"unknown OS. Stopping"
-    exit 1 
-esac
+build_pony() {
+  local module=$1
+  local binary=$2
 
-./premake/${os}/premake5 gmake
+  if [ "$build_type" = "Debug" ]; then
+    ponyc "$module" -b "$binary" -d
+  else
+    ponyc "$module" -b "$binary"
+  fi
+}
 
-# compile the C part
-rm -f libotp_pony_node_c.so
-make -C build/${os}/gmake config=debug
+cmake -S . -B build -DCMAKE_BUILD_TYPE="$build_type"
+cmake --build build --parallel
 
-echo "pony"
+echo "ponyc:"
 ponyc --version
 
-# compile the Pony part
-ponyc demo -d -b otp_pony_node
-ponyc test -d -b otp_pony_node_test
-
-if [ "$os" == "macosx" ]; then
-    install_name_tool -change "@rpath/libotp_pony_node_c.so" "@loader_path/libotp_pony_node_c.so" otp_pony_node
-    install_name_tool -change "@rpath/libotp_pony_node_c.so" "@loader_path/libotp_pony_node_c.so" otp_pony_node_test
-fi
+build_pony demo otp_pony_node
+build_pony test otp_pony_node_test

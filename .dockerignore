@@ -1,5 +1,29 @@
 Dockerfile
 docker-compose.yml
+
+# Never ship host build output or downloaded dependencies into the image: a
+# build tree made on another platform breaks the configure step inside it.
+build/
+build-debug/
+build-zig/
+build-zig-debug/
+obj/
+*.a
+*.so
+*.dylib
+*.dll
+*.o
+otp_pony_node
+otp_pony_node_test
+corral_demo/corral_demo
+_corral/
+_repos/
+*.dSYM/
+
+.git/
+.github/
 .elixir_ls/
 .vscode/
-obj/
+.vagrant/
+*.log
+.DS_Store

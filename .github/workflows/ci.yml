@@ -8,16 +8,22 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install system dependencies
+      - name: Install build tools
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential curl
+          sudo apt-get install -y build-essential cmake curl
 
       - name: Set up Erlang and Elixir
         uses: erlef/setup-beam@v1
@@ -28,16 +34,23 @@ jobs:
       - name: Install ponyup
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
-          echo "$HOME/.local/share/ponyup/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
 
       - name: Install ponyc
         run: |
           ponyup update ponyc release
-          echo "Pony compiler version:"
           ponyc --version
+
+      - name: Show tool versions
+        run: |
+          cmake --version
+          erl -noshell -eval 'io:format("OTP ~s, erl_interface ~s~n", [erlang:system_info(otp_release), code:lib_dir(erl_interface)]), halt().'
 
       - name: Build
         run: ./build.sh
 
-      - name: Run Tests
+      - name: Unit tests
         run: ./test.sh
+
+      - name: Integration test against a live Elixir node
+        run: ./integration.sh

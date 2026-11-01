@@ -4,11 +4,11 @@
   ],
   "deps": [],
   "info": {
-    "description": "Pony node to talk to Erlang/Elixir nodes via erl_interface",
-    "homepage": "",
-    "license": "BSD-3-Clause",
-    "documentation_url": "",
-    "version": "0.1.0",
+    "description": "Erlang C node for Pony: talk to the BEAM over the distribution protocol with Erlang terms as Pony values",
+    "homepage": "https://github.com/d-led/otp_pony_node",
+    "license": "MPL-2.0",
+    "documentation_url": "https://github.com/d-led/otp_pony_node/blob/master/README.md",
+    "version": "0.2.0",
     "name": "otp_pony_node"
   }
 }

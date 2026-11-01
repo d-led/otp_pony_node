@@ -1,103 +1,82 @@
 use "../erl_interface_pony"
-use "debug"
 
 use "path:../"
 
 actor PonyNode
-    let _env : Env
-    let erl: EInterface
-    var _reply_nr: U8 = 0
+  """
+  Answers `{Pid, Binary}` messages from an Elixir node with
+  `{reply, Binary, Pid}` until the other side stops talking.
+  """
 
-    new create(env: Env) =>
-        _env = env
-        erl = EInterface("pony", "secretcookie")
-        // erl.set_tracelevel(5)
+  let _env: Env
+  let _erl: EInterface
+  var _reply_number: U32 = 0
 
-    be demo() =>
-        let connected = erl.connect("demo@localhost")
-        match connected
-        | ConnectionFailed => 
-            _env.out.print("Pony: connection failed. Exiting")
-            return
-        | ConnectionSucceeded =>
-            _env.out.print("Pony: connection successful")
-        end
+  new create(env: Env) =>
+    _env = env
+    _erl = EInterface("pony", "secretcookie")
 
-        receive_loop()
+  be demo() =>
+    match _erl.connect("demo@localhost")
+    | ConnectionFailed =>
+      _env.out.print("Pony: connection failed (" + _erl.last_error() + ")")
+      return
+    | ConnectionSucceeded =>
+      _env.out.print("Pony: connected as " + _erl.this_nodename())
+    end
 
-    be receive_loop() =>
-        // todo: receive with timeout
-        let receved = erl.receive_with_timeout(5_000/*ms*/)
-        match receved
-        | ReceiveFailed =>
-            _env.out.print("Pony: receive failed. Disconnecting")
-            erl.disconnect()
-            return
-        | ReceiveTimedOut =>
-            _env.out.print("Pony: receive timed out. Disconnecting")
-            erl.disconnect()
-            return
-        | let m: EMessage =>
-            handle_message(m)
-        end
+    receive_loop()
 
-        // until failure
-        receive_loop()
-    
-    fun print_string_or_none(a: (String | None)) =>
-      match a
-        | let text: String =>
-          _env.out.print("Pony: atom: " + text)
-        else
-          _env.out.print("Pony: expected a string...:(")
-        end
+  be receive_loop() =>
+    match _erl.receive_with_timeout(5_000)
+    | ReceiveFailed =>
+      _env.out.print("Pony: connection closed or unusable ("
+        + _erl.last_error() + ")")
+      return
+    | ReceiveTimedOut =>
+      _env.out.print("Pony: no more messages")
+      return
+    | let message: EMessage =>
+      answer(message)
+    end
 
-    fun print_pid_or_none(a: (ErlangPid | None)) =>
-      match a
-        | let p: ErlangPid =>
-          _env.out.print("Pony: pid: " + p.node)
-        else
-          _env.out.print("Pony: expected a Pid...:(")
-        end
-    
-    fun ref handle_message(m: EMessage ref) =>
-      _env.out.print("Pony: received: " + m.length().string() + "bytes")
-      
-      // Keep original debug_type_at calls to print the type info for the tests/demo logs
-      m.debug_type_at(m.beginning)
-      (var arity, var pos) = m.tuple_arity_at(m.beginning)
-      if arity == 2 then
-        m.debug_type_at(pos)
-        (var pid, var pos2) = m.pid_at(pos)
-        m.debug_type_at(pos2)
+    receive_loop()
+
+  fun ref answer(message: EMessage ref) =>
+    match ErlangTermDecoder.decode(message)
+    | let call: ErlangTuple => reply_to(call)
+    else
+      _env.out.print("Pony: not a tuple, ignoring it")
+    end
+
+  fun ref reply_to(call: ErlangTuple) =>
+    try
+      let sender = call.elements(0)? as ErlangPid
+      let text = call.elements(1)? as ErlangBinary
+      _env.out.print("Pony: \"" + text.value + "\" from " + sender.string())
+
+      _reply_number = _reply_number + 1
+      let self_pid = _erl.self_pid()?
+      let reply: Array[ErlangTerm] val = [
+        ErlangAtom("reply")
+        ErlangBinary("hello from Pony " + _reply_number.string() + "!")
+        self_pid
+      ]
+
+      let encoded = EMessage.begin()
+      encoded.encode(ErlangTuple(reply))?
+
+      match _erl.send_to(sender, encoded, 500)
+      | SentOk => None
+      | SendFailed =>
+        _env.out.print("Pony: the reply did not go out (" + _erl.last_error() + ")")
+      | SendTimedOut =>
+        _env.out.print("Pony: sending the reply timed out")
       end
-
-      match ErlangTermDecoder.decode(m)
-      | let root_tuple: ErlangTuple =>
-        try
-          let pid = root_tuple.elements(0)? as ErlangPid
-          let msg = root_tuple.elements(1)? as ErlangBinary
-
-          _env.out.print("Pony: pid: " + pid.node)
-          _env.out.print("Pony: atom: " + msg.value)
-
-          _env.out.print("Pony: elixir target: " + pid.string())
-          let r = EMessage.begin()
-          r.encode_tuple_header(3)
-          r.encode_atom("reply")
-          _reply_nr = _reply_nr + 1
-          r.encode_binary("hello from Pony " + _reply_nr.string() + "!")
-          r.encode_pid(erl.self_pid())
-          _env.out.print("Pony: sending a reply")
-          erl.send_with_timeout(pid, r, 500)
-        else
-          _env.out.print("Pony: no Pid to send the answer to")
-        end
-      else
-        _env.out.print("Pony: failed to decode root term as tuple")
-      end
+    else
+      _env.out.print("Pony: that was not a {Pid, Binary} call")
+    end
 
 actor Main
   new create(env: Env) =>
-    let n = PonyNode(env)
-    n.demo()
+    PonyNode(env).demo()
