@@ -234,8 +234,11 @@ Pony strings.
 
 ## API Documentation
 
-The docstrings in [`erl_interface_pony/`](https://github.com/d-led/otp_pony_node/tree/master/erl_interface_pony)
-are the reference.
+[https://d-led.github.io/otp_pony_node/](https://d-led.github.io/otp_pony_node/)
+
+That site carries a tutorial, the [reading messages](https://d-led.github.io/otp_pony_node/messages/)
+guide, and a page for every type, generated from the docstrings in
+[`erl_interface_pony/`](https://github.com/d-led/otp_pony_node/tree/master/erl_interface_pony).
 
 ## Working on this library
 
@@ -245,6 +248,7 @@ are the reference.
 ./test.sh           # unit tests, no Erlang node needed
 ./integration.sh    # round trip against a live Elixir node, needs Elixir
 ./ci-local.sh       # the Linux CI job, in a container
+./docs.sh           # the documentation site, needs mkdocs-material
 ```
 
 The container carries the toolchain the Linux job installs: `ci.yml` asks for

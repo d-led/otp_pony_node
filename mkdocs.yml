@@ -1,0 +1,29 @@
+site_name: otp_pony_node
+site_description: An Erlang C node for Pony
+site_url: https://d-led.github.io/otp_pony_node/
+repo_url: https://github.com/d-led/otp_pony_node
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Your first node: tutorial.md
+  - Reading messages: messages.md
+  - API reference: api/erl_interface_pony--index.md
+
+# The API pages are generated from the docstrings by ./docs.sh.  They link to
+# each other, including the standard library types they mention, so they need
+# no navigation entries of their own.
+not_in_nav: |
+  api/**
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true

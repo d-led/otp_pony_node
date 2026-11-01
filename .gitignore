@@ -140,7 +140,15 @@ build-zig-debug/
 libotp_pony_node_c.a
 demo.log
 
+### Documentation site ###
+docs/api/
+site/
+
 ### macOS ###
 .DS_Store
 *.dSYM/
 *.dSYM
+
+
+
+*.bc
