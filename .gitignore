@@ -1,26 +1,148 @@
-otp_pony_node
-*.exe
-*.exp
-*.ilk
-*.lib
-*.pdb
-*.dSYM**
-obj/
-*.pony_
-*.so
-ttb_last_config
-.vagrant/
-*.log
-*.tmp
-otp_pony_node_c.dll
-!src/find_latest_erl_interface/find_latest_erl_interface.exe
-!premake/windows/premake5.exe
-otp_pony_node_test
+# Created by https://www.toptal.com/developers/gitignore
+# Templates: erlang, c++, visualstudiocode, visualstudio, cmake, premake-gmake
+# Curated for this project: Pony binaries, corral and the CMake build tree are
+# listed at the end.  The bare `Makefile` rule of the CMake template is left out
+# on purpose: this repository has a hand written one.
 
-# Corral dependency management
+### C++ ###
+*.d
+*.slo
+*.lo
+*.o
+*.obj
+*.gch
+*.pch
+*.so
+*.dylib
+*.dll
+*.mod
+*.smod
+*.lai
+*.la
+*.a
+*.lib
+*.exe
+*.out
+*.app
+
+### CMake ###
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+CMakeUserPresets.json
+*-prefix/
+
+### Erlang ###
+.eunit
+*.beam
+*.plt
+erl_crash.dump
+.concrete/DEV_MODE
+.rebar
+.rebar3
+_build/
+_checkouts/
+rebar3.crashdump
+
+### premake-gmake ###
+*.make
+obj/
+
+### Visual Studio Code ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+!.vscode/c_cpp_properties.json
+.history/
+*.vsix
+*.code-workspace
+
+### Visual Studio ###
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+mono_crash.*
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+.vs/
+[Tt]est[Rr]esult*/
+*.ilk
+*.iobj
+*.pdb
+*.ipdb
+*.rsp
+*.sbr
+*.tmp
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+*.scc
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+*.psess
+*.vsp
+*.vspx
+*.sap
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+UpgradeLog*.XML
+UpgradeLog*.htm
+Backup*/
+.localhistory/
+.vshistory/
+*.binlog
+
+### Pony and corral ###
+otp_pony_node
+otp_pony_node_test
+corral_demo/corral_demo
 _corral/
 _repos/
+*.pony_
 
-# Corral Demo artifacts
-corral_demo/corral_demo
-corral_demo/libotp_pony_node_c.so
+### This project's build output ###
+build/
+build-debug/
+build-zig/
+build-zig-debug/
+libotp_pony_node_c.a
+corral_demo/libotp_pony_node_c.a
+demo.log
+
+### macOS ###
+.DS_Store
+*.dSYM/
+*.dSYM
+.vagrant/
