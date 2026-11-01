@@ -10,7 +10,7 @@ Beta. Expect breaking changes.
 ## Installation
 
 * Install [corral](https://github.com/ponylang/corral)
-* `corral add github.com/d-led/otp_pony_node.git --version 0.3.0`
+* `corral add github.com/d-led/otp_pony_node.git --version 0.4.0`
 * `corral fetch` to fetch your dependencies
 * `use "erl_interface_pony"` to include this package
 * `corral run -- ponyc` to compile your application
@@ -170,6 +170,15 @@ types its elements must have. A decoder is the one place that does it, and
 handlers then work with a value of their own:
 
 ```pony
+class val Call
+  """A `{Pid, Binary}` message, in the types a handler wants."""
+  let sender: ErlangPid
+  let text: String
+
+  new val create(sender': ErlangPid, text': String) =>
+    sender = sender'
+    text = text'
+
 primitive CallDecoder
   """A `{Pid, Binary}` call, or `None` for anything else."""
 
@@ -187,10 +196,23 @@ primitive CallDecoder
 
 `ErlangShapes.pair` and `ErlangShapes.triple` hand back the leading elements of
 a tuple, so one `match` binds each of them with its type; a term of any other
-shape falls to `else`. Reading inside a term is total too:
-`ErlangTuple.at(index)`, `ErlangList.at(index)` and `ErlangMap.get(key)` answer
-`None` rather than raising, and `ErlangTerms.is_atom(term, "reply")` compares a
-tag.
+shape falls to `else`. Reading inside a term is total too: `ErlangTuple.at`,
+`ErlangList.at` and `ErlangMap.get` answer `None` rather than raising, and
+`ErlangTerms.is_atom` compares a tag.
+
+`ErlangValues` reads a payload out of a term, so that a lookup and the read
+that follows stay one expression:
+
+```pony
+let timeout: I64 =
+  match ErlangValues.integer(config.get(ErlangBinary("timeout")))
+  | let found: I64 => found
+  | None => 5_000   // no such key, or a value of another kind
+  end
+```
+
+`atom_name`, `bytes`, `chars`, `integer`, `float` and `pid` each answer `None`
+for a term of another kind, so the value is never cast and never raises.
 
 ## Limitations
 
