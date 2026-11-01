@@ -32,6 +32,7 @@ term can be a `Map` key, and a message is read by matching on types.
 
 * [Install](install.md) — add the library, build the native part.
 * [Your first node](tutorial.md) — a program the BEAM can call, in one page.
+* [Being called](reachable.md) — publish the node, accept what arrives.
 * [Reading messages](messages.md) — shapes, values and keys, without casts.
 * [API reference](api/erl_interface_pony--index.md) — every type and method.
 

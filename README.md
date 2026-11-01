@@ -10,7 +10,7 @@ Beta. Expect breaking changes.
 ## Installation
 
 * Install [corral](https://github.com/ponylang/corral)
-* `corral add github.com/d-led/otp_pony_node.git --version 0.5.0`
+* `corral add github.com/d-led/otp_pony_node.git --version 0.7.0`
 * `corral fetch` to fetch your dependencies
 * `use "erl_interface_pony"` to include this package
 * `corral run -- ponyc` to compile your application
@@ -99,24 +99,19 @@ actor PonyNode
     receive_loop()
 
   fun ref answer(message: EMessage ref) =>
-    match ErlangTermDecoder.decode(message)
-    | let call: ErlangTuple =>
-      try
-        let sender = call.elements(0)? as ErlangPid
-        let text = call.elements(1)? as ErlangBinary
-        _env.out.print("Pony: \"" + text.value + "\" from " + sender.string())
+    match ErlangShapes.pair(ErlangTermDecoder.decode(message))
+    | (let sender: ErlangPid, let text: ErlangBinary) =>
+      _env.out.print("Pony: \"" + text.value + "\" from " + sender.string())
 
-        let self_pid = _erl.self_pid()?
-        let body: Array[ErlangTerm] val = [
-          ErlangAtom("reply")
-          ErlangBinary("hello from Pony!")
-          self_pid
-        ]
+      let body: Array[ErlangTerm] val = [
+        ErlangAtom("reply")
+        ErlangBinary("hello from Pony!")
+        sender
+      ]
 
-        let reply = EMessage.begin()
-        reply.encode(ErlangTuple(body))?
-        _erl.send_to(sender, reply, 500)
-      end
+      let reply = EMessage.begin()
+      try reply.encode(ErlangTuple(body))? end
+      _erl.send_to(sender, reply, 500)
     else
       _env.out.print("Pony: not a {Pid, Binary} call")
     end
@@ -219,6 +214,39 @@ Keys come in two kinds, and a lookup says which one it means:
 finds `#{timeout => 5000}`, and `get` takes any term as the key.
 `ErlangMap.binary_keyed` and `ErlangMap.atom_keyed` build the first two from
 Pony strings.
+
+## Being called
+
+The example above calls out. A node can be the one that is called too: publish
+it, then accept what arrives.
+
+```pony
+match node.publish(47_001)
+| Published =>
+  env.out.print(node.this_nodename() + " listening on "
+    + node.published_port().string())
+| PublishFailed =>
+  env.out.print("cannot be reached (" + node.last_error() + ")")
+  return
+end
+
+match node.accept_with_timeout(30_000)
+| let connection: EInterface =>
+  env.out.print(connection.peer_nodename() + " called in")
+  answer_on(connection)  // receive and answer, as in the example above
+  connection.dispose()
+| AcceptTimedOut => None
+| AcceptFailed => None
+end
+```
+
+An accepted connection is an `EInterface` of its own that shares the node the
+listener made, and it holds that node until both are disposed, so either may go
+first. Reading a call on it is the same as reading one anywhere else.
+
+Publishing needs epmd, the port mapper that Erlang starts for itself. A machine
+that only has this library starts it once with `epmd -daemon`; a publish that
+finds nothing there fails, and `last_error()` says so.
 
 ## Limitations
 

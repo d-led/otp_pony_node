@@ -14,6 +14,7 @@ nav:
   - Home: index.md
   - Install: install.md
   - Your first node: tutorial.md
+  - Being called: reachable.md
   - Reading messages: messages.md
   - API reference: api/erl_interface_pony--index.md
 
