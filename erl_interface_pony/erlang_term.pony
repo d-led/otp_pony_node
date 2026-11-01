@@ -173,6 +173,14 @@ class val ErlangList is (Equatable[ErlangList] & Hashable)
 
   fun size(): USize => elements.size()
 
+  fun at(index: USize): (ErlangTerm | None) =>
+    """
+    The element at `index`, or `None` when the list is shorter.
+
+    The tail of an improper list is not an element: read it through `tail`.
+    """
+    try elements(index)? else None end
+
   fun eq(that: box->ErlangList): Bool =>
     ErlangTerms._terms_eq(elements, that.elements)
       and ErlangTerms._tail_eq(tail, that.tail)
@@ -192,6 +200,10 @@ class val ErlangTuple is (Equatable[ErlangTuple] & Hashable)
     elements = elements'
 
   fun size(): USize => elements.size()
+
+  fun at(index: USize): (ErlangTerm | None) =>
+    """The element at `index`, or `None` when the tuple is shorter."""
+    try elements(index)? else None end
 
   fun eq(that: box->ErlangTuple): Bool =>
     ErlangTerms._terms_eq(elements, that.elements)
@@ -224,6 +236,18 @@ class val ErlangMap is (Equatable[ErlangMap] & Hashable)
       combined = combined + pair
     end
     combined
+
+  fun get(key: ErlangTerm): (ErlangTerm | None) =>
+    """
+    The value under `key`, or `None` when the map has no such key.
+
+    Keys are compared as Erlang compares them, so a structurally equal key
+    finds its value.
+    """
+    for (candidate, value) in pairs.values() do
+      if ErlangTerms.eq(candidate, key) then return value end
+    end
+    None
 
 class val ErlangPort is (Equatable[ErlangPort] & Hashable)
   """A port identifier."""
@@ -329,6 +353,13 @@ primitive ErlangTerms
     | let t: ErlangPort => t.hash()
     | let t: ErlangReference => t.hash()
     | let t: ErlangOpaque => t.hash()
+    end
+
+  fun is_atom(term: ErlangTerm, name: String): Bool =>
+    """True when `term` is the atom `name`."""
+    match term
+    | let atom: ErlangAtom => atom.name == name
+    else false
     end
 
   fun _terms_eq(a: Array[ErlangTerm] val, b: Array[ErlangTerm] val): Bool =>
