@@ -35,6 +35,11 @@ actor Main
 `publish(0)` lets the system choose a port, and `published_port()` reports the
 one it took.
 
+The name is `<alive>@<the machine's host name without its domain>`, in lower
+case: a node of Erlang's own started with a short name only calls hosts it can
+name without a domain. `this_nodename()` says what the node is called, and it
+is worth asking rather than building the name.
+
 ## The other side
 
 An Elixir node reaches a published node by the name the Pony node printed when

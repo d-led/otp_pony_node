@@ -2,15 +2,18 @@
 
 #include <ei.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #if defined(_WIN32)
+#include <winsock2.h>
 #include <windows.h>
 #else
 #include <pthread.h>
+#include <unistd.h>
 #endif
 
 /* erl_interface keeps process wide state and builds it on first use: the node
@@ -108,11 +111,45 @@ void opn_ei_set_compat_rel(unsigned rel)
     ei_set_compat_rel(rel);
 }
 
+/* The host part of a node name: the machine's own host name, without the
+ * domain it may carry, in lower case, which is how Erlang writes host names
+ * into node names.
+ *
+ * erl_interface asks the name service instead and takes whatever name comes
+ * back, so the same machine is seen under one name and then another.  A name
+ * with a domain in it can only be called by a node of Erlang's own that was
+ * started with long names, so the name without it is the one that stays. */
+static int this_host(char *dst, size_t cap)
+{
+    size_t i;
+
+    if (!dst || cap == 0)
+        return -1;
+
+    if (gethostname(dst, cap) != 0)
+        return -1;
+
+    dst[cap - 1] = '\0';
+
+    for (i = 0; dst[i] != '\0'; i++) {
+        if (dst[i] == '.') {
+            dst[i] = '\0';
+            break;
+        }
+
+        dst[i] = (char)tolower((unsigned char)dst[i]);
+    }
+
+    return dst[0] == '\0' ? -1 : 0;
+}
+
 opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie,
                      unsigned creation)
 {
     opn_ei_t *self;
     int initialised;
+    char host[EI_MAXHOSTNAMELEN + 1];
+    char nodename[MAXNODELEN + 1];
 
     if (!this_nodename || !cookie)
         return NULL;
@@ -123,8 +160,20 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie,
 
     opn_ei_lock_acquire();
     ei_init();
-    initialised =
-        ei_connect_init(&self->cnode, this_nodename, cookie, creation);
+
+    if ((this_host(host, sizeof host) == 0)
+        && (snprintf(nodename, sizeof nodename, "%s@%s", this_nodename, host)
+            < (int)sizeof nodename))
+    {
+        initialised = ei_connect_xinit(&self->cnode, host, this_nodename,
+                                       nodename, NULL, cookie, creation);
+    }
+    else
+    {
+        initialised =
+            ei_connect_init(&self->cnode, this_nodename, cookie, creation);
+    }
+
     opn_ei_lock_release();
 
     if (initialised < 0) {

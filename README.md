@@ -244,6 +244,10 @@ An accepted connection is an `EInterface` of its own that shares the node the
 listener made, and it holds that node until both are disposed, so either may go
 first. Reading a call on it is the same as reading one anywhere else.
 
+A node is named `<alive>@<the machine's host name without its domain>`, in
+lower case, because a node of Erlang's own started with a short name only
+calls hosts it can name without a domain.
+
 Publishing needs epmd, the port mapper that Erlang starts for itself. A machine
 that only has this library starts it once with `epmd -daemon`; a publish that
 finds nothing there fails, and `last_error()` says so.

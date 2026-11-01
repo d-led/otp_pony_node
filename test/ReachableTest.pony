@@ -16,9 +16,28 @@ class ReachableTest is TestList
   fun name(): String => "being reachable"
 
   fun tag tests(test: PonyTest) =>
+    test(_TheNameCarriesNoDomainTest)
     test(_AcceptWithoutPublishTest)
     test(_PublishOnceTest)
     test(_ADisposedNodeCannotBeCalledTest)
+
+class iso _TheNameCarriesNoDomainTest is UnitTest
+  """
+  A node of Erlang's own started with a short name only calls hosts it can
+  name without a domain, so the host part of this node's name is the machine's
+  host name without one.
+  """
+
+  fun name(): String => "a node's name carries no domain"
+
+  fun apply(h: TestHelper) =>
+    let node = EInterface("pony_test_named", "cookie")
+    let host = node.this_hostname()
+
+    h.assert_eq[String]("pony_test_named@" + host, node.this_nodename(),
+      "the name is the node's at the host")
+    h.assert_false(host.contains("."),
+      "the host part carries no domain: " + host)
 
 primitive _NeedsEpmd
   """

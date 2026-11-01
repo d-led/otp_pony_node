@@ -52,11 +52,39 @@ wait_for_epmd_to_forget_the_demo() {
   done
 }
 
+# epmd knows a node as soon as it has registered, which is the moment the other
+# side can call it -- earlier than the node says so itself, and without
+# waiting for a sleep to be long enough on a machine under load.
+wait_for_epmd_to_know() {
+  local name=$1
+  local tries=0
+
+  while [ "$tries" -lt 150 ]; do
+    if epmd -names 2>/dev/null | grep -q "^name $name "; then
+      return 0
+    fi
+    sleep 0.2
+    tries=$((tries + 1))
+  done
+  return 1
+}
+
+# The host part of a node name, as the library writes it: the machine's host
+# name without the domain it may carry, lower case.
+short_host() {
+  hostname | tr '[:upper:]' '[:lower:]' | cut -d. -f1
+}
+
 # The Pony node calls out, and answers.
 elixir --sname demo@localhost --cookie secretcookie demo.exs > "$outbound_log" 2>&1 &
 elixir_pid=$!
 
-sleep 2
+if ! wait_for_epmd_to_know demo; then
+  echo "the Elixir node did not start:" >&2
+  cat "$outbound_log" >&2
+  exit 1
+fi
+
 ./otp_pony_node
 
 if ! grep -q "Elixir: received: {:reply," "$outbound_log"; then
@@ -67,16 +95,17 @@ fi
 
 echo "the Pony node answered the Elixir node"
 
-# The Pony node is called in, and answers.  The name it publishes is read back
-# from its own report, which it flushes as soon as it is listening: a host name
-# is spelled one way by the node and another by whoever looks it up.
+# The Pony node is called in, and answers.  epmd is asked whether the node is
+# there, which its own report cannot be relied on for: what it prints is
+# flushed when it has published, but a machine under load takes a while to get
+# that far, and the report is only read once epmd says it is listening.
 ./otp_pony_node --listen "$port" > "$pony_log" 2>&1 &
 pony_pid=$!
 
-wait_for_the_node_to_listen() {
-  local attempts=300
+wait_for_epmd_to_know_the_node() {
+  local attempts=600
   while [ "$attempts" -gt 0 ]; do
-    if grep -q " listening on port " "$pony_log"; then
+    if epmd -names 2>/dev/null | grep -q '^name pony_server '; then
       return 0
     fi
 
@@ -92,22 +121,23 @@ wait_for_the_node_to_listen() {
   return 1
 }
 
-if ! wait_for_the_node_to_listen; then
+if ! wait_for_epmd_to_know_the_node; then
   echo "the Pony node did not publish itself:" >&2
   cat "$pony_log" >&2
   exit 1
 fi
 
 pony_node=$(sed -n 's/^Pony: \(.*\) listening on port .*$/\1/p' "$pony_log" | head -1)
+if [ -z "$pony_node" ]; then
+  pony_node="pony_server@$(short_host)"
+fi
 echo "the Pony node is $pony_node"
 
-# The caller is named on the host the Pony node named itself on.  A node of
-# Erlang's own with a short name is only allowed to talk to hosts it can name
-# without a domain, and on a machine whose host name carries one the two ends
-# then disagree about what the other is called.
-caller_node="caller@${pony_node#*@}"
+# The caller is named on the host the Pony node named itself on: two ends
+# named differently do not talk.
+caller_flags=(--sname "caller@${pony_node#*@}")
 
-if ! elixir --sname "$caller_node" --cookie secretcookie incoming.exs "$pony_node"; then
+if ! elixir "${caller_flags[@]}" --cookie secretcookie incoming.exs "$pony_node"; then
   echo "the Elixir node could not call the Pony node:" >&2
   cat "$pony_log" >&2
   exit 1
