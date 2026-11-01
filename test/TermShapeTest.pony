@@ -11,6 +11,7 @@ class TermShapeTest is TestList
     test(_TripleBindsAllThreeElementsTest)
     test(_TripleAcceptsNoOtherShapeTest)
     test(_AtomIsRecognisedByNameTest)
+    test(_NoTermAtAllIsNoShapeTest)
 
 class iso _PairBindsBothElementsTest is UnitTest
   fun name(): String => "a match on a pair binds both elements with their types"
@@ -85,3 +86,19 @@ class iso _AtomIsRecognisedByNameTest is UnitTest
     h.assert_false(
       ErlangTerms.is_atom(ErlangBinary("reply"), "reply"),
       "a binary with the same bytes is not the atom")
+
+class iso _NoTermAtAllIsNoShapeTest is UnitTest
+  fun name(): String => "a message that did not decode has no shape"
+
+  fun apply(h: TestHelper) =>
+    match ErlangShapes.pair(None)
+    | (let left: ErlangTerm, let right: ErlangTerm) =>
+      h.fail("nothing decoded is not a pair")
+    else None
+    end
+
+    match ErlangShapes.triple(None)
+    | (let first: ErlangTerm, let second: ErlangTerm, let third: ErlangTerm) =>
+      h.fail("nothing decoded is not a triple")
+    else None
+    end

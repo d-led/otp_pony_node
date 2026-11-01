@@ -18,9 +18,12 @@ primitive ErlangShapes
   shape is known: `ErlangTerms.is_atom(kind_term, "reply")`.
   """
 
-  fun pair(term: ErlangTerm): ((ErlangTerm | None), (ErlangTerm | None)) =>
+  fun pair(term: (ErlangTerm | None))
+    : ((ErlangTerm | None), (ErlangTerm | None))
+  =>
     """
-    Both elements of a two element tuple, and two `None`s for anything else.
+    Both elements of a two element tuple, and two `None`s for anything else,
+    including no term at all, so a decoded message goes straight in.
     """
     match term
     | let tuple: ErlangTuple =>
@@ -33,12 +36,12 @@ primitive ErlangShapes
       (None, None)
     end
 
-  fun triple(term: ErlangTerm)
+  fun triple(term: (ErlangTerm | None))
     : ((ErlangTerm | None), (ErlangTerm | None), (ErlangTerm | None))
   =>
     """
     All three elements of a three element tuple, and three `None`s for anything
-    else.
+    else, including no term at all.
     """
     match term
     | let tuple: ErlangTuple =>
