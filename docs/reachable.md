@@ -37,11 +37,12 @@ one it took.
 
 ## The other side
 
-An Elixir node reaches a published node by name:
+An Elixir node reaches a published node by the name the Pony node printed when
+it published, which is the one that reaches it:
 
 ```elixir
-{:ok, host} = :inet.gethostname
-target = :"pony@#{host}"
+[node_name] = System.argv()
+target = String.to_atom(node_name)
 
 Node.connect(target)
 send({:any, target}, {self(), "hi from Elixir"})
@@ -53,7 +54,9 @@ after
 end
 ```
 
-The cookie has to be the one the node was created with.
+A host name built here with `:inet.gethostname` can be spelled in another case
+than the one the node registered, and then the node is not found. The cookie
+has to be the one the node was created with.
 
 ## An accepted connection
 
@@ -86,5 +89,18 @@ epmd -daemon
 ```
 
 A publish that finds nothing listening there fails, and `last_error()` says so.
-`./test.sh` starts epmd when it is installed, because the reachable tests
-publish a node of their own.
+`./test.sh` starts epmd when it is installed, and waits for it to answer,
+because the reachable tests publish a node of their own.
+
+## Letting go
+
+`dispose` closes the socket the node listened on, so a caller is turned away at
+once. The name belongs to epmd, which keeps it until the process ends, so a
+process publishes a given name once; a program that wants a fresh node under
+the same name starts a new process.
+
+A call in is proved against a real Erlang node in `integration.sh`, where an
+Elixir node calls the demo and waits for its answer. Two nodes of this library
+in one process are not the other side this package is tested with: the C
+library keeps state per process.
+

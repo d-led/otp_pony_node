@@ -83,7 +83,13 @@ class EInterface
     _connection >= 0
 
   fun ref connect(nodename: String): ConnectionStatus =>
-    """Connects to a node, blocking until it answers."""
+    """
+    Connects to a node, blocking until it answers.
+
+    The C library keeps process wide state, and this holds the lock over it
+    while it waits, so use `connect_with_timeout` when the other node may not
+    answer.
+    """
     if connected() then return ConnectionFailed end
     if not _ensure_node() then return ConnectionFailed end
 
@@ -141,14 +147,20 @@ class EInterface
     _published_port
 
   fun ref unpublish() =>
-    """Withdraws the name from epmd and closes the listening socket."""
+    """
+    Closes the listening socket, so the node cannot be called any more.
+
+    The name itself is epmd's: it holds it for as long as the session the C
+    library keeps open for it, which ends with the process, so a node of the
+    same name cannot be published again in this process.
+    """
     if _listener >= 0 then
       @opn_ei_close_connection(_listener)
       _listener = -1
       _published_port = 0
     end
 
-    if not (_disposed or _node.is_null()) then
+    if not _node.is_null() then
       @opn_ei_unpublish(_node)
     end
 
@@ -194,11 +206,13 @@ class EInterface
     """
     Releases the connection and the node now, not when the collector runs.
     A disposed interface does nothing on any later call.
+
+    A published node stops listening here, so nobody can call it any more.
     """
     if _disposed then return end
     _disposed = true
-    disconnect()
     unpublish()
+    disconnect()
     if not _node.is_null() then
       @opn_ei_destroy(_node)
       _node = Pointer[None]

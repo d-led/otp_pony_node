@@ -248,6 +248,10 @@ Publishing needs epmd, the port mapper that Erlang starts for itself. A machine
 that only has this library starts it once with `epmd -daemon`; a publish that
 finds nothing there fails, and `last_error()` says so.
 
+Letting go of the node closes the socket it listened on, so it cannot be called
+any more. The name belongs to epmd, which holds it until the process ends, so
+one process publishes a given name once.
+
 ## Limitations
 
 * Links, monitors and exit signals reach the node but are not modelled. Only
@@ -257,8 +261,13 @@ finds nothing there fails, and `last_error()` says so.
   exhaust the stack.
 * `ErlangOpaque` terms can be forwarded, not inspected.
 * The C library keeps process wide state, so creating a node and connecting
-  take a process wide lock. Sending from two nodes at the same time has not
-  been shown to be safe.
+  take a process wide lock. A `connect` that waits holds that lock while it
+  waits, so reach for `connect_with_timeout` when the other node may not
+  answer. Sending from two nodes at the same time has not been shown to be
+  safe.
+* A node of this library calling another node of the same process has not been
+  shown to be safe either. Another program is the supported other side, which
+  is how the tests of a call in are run.
 
 ## API Documentation
 

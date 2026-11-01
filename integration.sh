@@ -2,7 +2,15 @@
 # Talks to a real Elixir node in both directions: the demo script sends
 # messages and the Pony node answers them, then the Pony node publishes itself
 # and the Elixir node calls it in.  Fails when either exchange does not happen.
+#
+# This is where a call in is proved, because the other side is another program
+# with a node of its own; the unit tests do not put two of this library's
+# nodes in one process against each other.
 set -euo pipefail
+
+# shellcheck source=epmd.sh
+. ./epmd.sh
+ensure_epmd
 
 port=47_002
 outbound_log=$(mktemp "${TMPDIR:-/tmp}/otp_pony_node_demo.XXXXXX")
