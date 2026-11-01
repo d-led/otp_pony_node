@@ -1,0 +1,94 @@
+name: Diagnose a stalled suite
+
+# Temporary: the unit tests hang on a hosted Linux runner.  This runs them with
+# a watchdog and prints what each thread is waiting on, plus the host's name
+# resolution, which is what the erl_interface node setup touches first.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    name: where the suite waits
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake curl
+
+      - name: Set up Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.2'
+          otp-version: '27.2'
+
+      - name: Install ponyup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
+
+      - name: Install ponyc
+        run: |
+          ponyup update ponyc release
+          ponyc --version
+
+      - name: Build
+        run: ./build.sh
+
+      - name: What this host is called
+        run: |
+          hostname
+          hostname -f || true
+          getent hosts "$(hostname)" || echo 'the host name is not in the hosts file'
+          echo '--- /etc/hosts ---'
+          cat /etc/hosts
+          echo '--- /etc/nsswitch.conf ---'
+          grep '^hosts' /etc/nsswitch.conf || true
+          echo '--- what the node in this library thinks ---'
+          erl -noshell -eval 'io:format("~s ~s~n", [inet:gethostname(), node()]), halt().'
+
+      - name: Run the tests with a watchdog
+        timeout-minutes: 10
+        run: |
+          set -uo pipefail
+
+          ./test.sh > /tmp/tests.log 2>&1 &
+          runner=$!
+
+          for _ in $(seq 1 45); do
+            if ! kill -0 "$runner" 2>/dev/null; then
+              wait "$runner" || true
+              cat /tmp/tests.log
+              echo 'the suite ended by itself'
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo '=== stalled: the tests so far ==='
+          tail -20 /tmp/tests.log
+
+          pid=$(pgrep -n -f otp_pony_node_test)
+          echo "=== process $pid, one line per thread ==="
+          ps -L -o pid,tid,stat,wchan:38,comm -p "$pid" || true
+
+          echo '=== the kernel call each thread sits in ==='
+          for task in /proc/"$pid"/task/*; do
+            printf '%s %s\n' "$(basename "$task")" "$(cat "$task/wchan" 2>/dev/null)"
+          done
+
+          echo '=== epmd ==='
+          epmd -names || true
+          ss -ltnp | head -20 || true
+
+          echo '=== C stacks ==='
+          sudo apt-get install -y gdb >/dev/null 2>&1 || true
+          sudo timeout 120 gdb -q -batch -p "$pid" -ex 'thread apply all bt' 2>&1 | tail -120
+
+          kill -9 "$pid" || true
+          exit 1
