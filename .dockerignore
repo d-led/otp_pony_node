@@ -1,5 +1,4 @@
 Dockerfile
-docker-compose.yml
 
 # Never ship host build output or downloaded dependencies into the image: a
 # build tree made on another platform breaks the configure step inside it.

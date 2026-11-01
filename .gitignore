@@ -145,4 +145,3 @@ demo.log
 .DS_Store
 *.dSYM/
 *.dSYM
-.vagrant/

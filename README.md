@@ -159,7 +159,14 @@ are the reference.
 ./build.sh --debug  # the same, unoptimised
 ./test.sh           # unit tests, no Erlang node needed
 ./integration.sh    # round trip against a live Elixir node, needs Elixir
+./ci-local.sh       # the Linux CI job, in a container
 ```
+
+The container carries the toolchain the Linux job installs: `ci.yml` asks for
+OTP 27.2 and Elixir 1.18.2, and the image is those versions on the same Ubuntu
+release, so `ci-local.sh` runs the same commands on the same Erlang.  It cannot
+run the macOS job, and on an arm64 machine it cannot stand in for the x86_64
+runner.
 
 `./demo_exs.sh` runs the Elixir side of the demo in the foreground; run
 `./otp_pony_node` from another terminal to watch the exchange.

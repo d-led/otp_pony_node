@@ -1,18 +1,17 @@
-FROM ubuntu:24.04
+# The toolchain the Native CI job installs.  setup-beam resolves
+# `otp-version: 27.2` to the newest 27.2.x on ubuntu-latest, and this image is
+# that OTP and Elixir on the same Ubuntu release, so a local run and a CI run
+# differ only in the runner.
+FROM hexpm/elixir:1.18.2-erlang-27.2.4-ubuntu-noble-20250925
 
 ENV DEBIAN_FRONTEND=noninteractive \
     SHELL=/bin/bash
 
-# Erlang/Elixir from the distribution: erlang-dev brings ei.h together with the
-# static archive libei.a that the shim links.  lsb-release is what ponyup uses to
-# work out which ponyc build to download, so the platform is never hard coded.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
         cmake \
         curl \
-        elixir \
-        erlang-dev \
         git \
         lsb-release \
     && rm -rf /var/lib/apt/lists/*
@@ -26,5 +25,4 @@ COPY . /src/main/
 WORKDIR /src/main
 RUN ./build.sh
 
-# Unit tests, then a round trip through a real Elixir node.
 CMD ["bash", "-lc", "./test.sh && ./integration.sh"]
