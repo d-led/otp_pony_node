@@ -49,8 +49,9 @@ jobs:
           cat /etc/hosts
           echo '--- /etc/nsswitch.conf ---'
           grep '^hosts' /etc/nsswitch.conf || true
-          echo '--- what the node in this library thinks ---'
-          erl -noshell -eval 'io:format("~s ~s~n", [inet:gethostname(), node()]), halt().'
+          echo '--- epmd ---'
+          command -v epmd || true
+          epmd -names || true
 
       - name: Run the tests with a watchdog
         timeout-minutes: 10
