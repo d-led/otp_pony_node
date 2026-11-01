@@ -12,9 +12,9 @@ actor PonyNode
   let _erl: EInterface
   var _reply_number: U32 = 0
 
-  new create(env: Env) =>
+  new create(env: Env, alive_name: String) =>
     _env = env
-    _erl = EInterface("pony", "secretcookie")
+    _erl = EInterface(alive_name, "secretcookie")
 
   be demo() =>
     match _erl.connect("demo@localhost")
@@ -129,12 +129,14 @@ primitive CallDecoder
 
 actor Main
   new create(env: Env) =>
-    let node = PonyNode(env)
-
     if _argument(env, 1) == "--listen" then
-      node.serve(_port(env))
+      // A node that is called is a node of its own, named apart from the one
+      // that calls out: epmd lets go of a name a moment after the process that
+      // published it has ended, and the name it lets go of is the one a node
+      // started in between has just registered.
+      PonyNode(env, "pony_server").serve(_port(env))
     else
-      node.demo()
+      PonyNode(env, "pony").demo()
     end
 
   fun _argument(env: Env, index: USize): String =>

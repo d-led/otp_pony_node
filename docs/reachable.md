@@ -58,6 +58,17 @@ A host name built here with `:inet.gethostname` can be spelled in another case
 than the one the node registered, and then the node is not found. The cookie
 has to be the one the node was created with.
 
+Name the Elixir node on the host the Pony node named itself on, as the example
+in `integration.sh` does:
+
+```bash
+elixir --sname "caller@${pony_node#*@}" --cookie secretcookie incoming.exs "$pony_node"
+```
+
+A node of Erlang's own with a short name only talks to hosts it can name
+without a domain, so a machine whose short host name resolves with one refuses
+the connection when the two ends are named differently.
+
 ## An accepted connection
 
 `accept` answers with an `EInterface` of its own. It shares the node the
