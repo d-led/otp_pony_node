@@ -17,5 +17,6 @@ actor Main is TestList
     ValueGetterTest.tests(test)
     BigIntegerTest.tests(test)
     ErlInterfaceTest.tests(test)
+    ReachableTest.tests(test)
     NodeConcurrencyTest.tests(test)
     ResourceLifecycleTest.tests(test)

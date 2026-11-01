@@ -56,6 +56,25 @@ OPN_API int opn_ei_connect_tmo(opn_ei_t *self, const char *nodename,
                                unsigned ms);
 OPN_API int opn_ei_close_connection(int fd);
 
+/* Publishes this node's name with epmd and listens for connections on `port`,
+ * or on a port of its own when `port` is zero.  The port bound is written to
+ * `bound`.  Returns the listening socket, or a negative value. */
+OPN_API int opn_ei_publish(opn_ei_t *self, unsigned port, unsigned *bound);
+
+/* Withdraws this node's name from epmd. */
+OPN_API int opn_ei_unpublish(opn_ei_t *self);
+
+/* Waits for a node to connect to `listen_fd`, `ms == 0` blocking.  Returns the
+ * connection, or a negative value; the peer's node name lands in `peer`. */
+OPN_API int opn_ei_accept(opn_ei_t *self, int listen_fd, char *peer,
+                          size_t peer_cap);
+OPN_API int opn_ei_accept_tmo(opn_ei_t *self, int listen_fd, unsigned ms,
+                              char *peer, size_t peer_cap, int *timed_out);
+
+/* One more owner of a node: an accepted connection shares the node that its
+ * listener was made from. */
+OPN_API void opn_ei_retain(opn_ei_t *self);
+
 OPN_API int opn_ei_self_pid(const opn_ei_t *self, char *node, size_t node_cap,
                             unsigned *num, unsigned *serial,
                             unsigned *creation);

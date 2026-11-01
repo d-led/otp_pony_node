@@ -11,6 +11,14 @@ use @opn_ei_connect[I32](node: Pointer[None] tag, nodename: Pointer[U8] tag)
 use @opn_ei_connect_tmo[I32](node: Pointer[None] tag, nodename: Pointer[U8] tag,
   timeout_ms: U32)
 use @opn_ei_close_connection[I32](connection: I32)
+use @opn_ei_publish[I32](node: Pointer[None] tag, port: U32,
+  bound: Pointer[U32] tag)
+use @opn_ei_unpublish[I32](node: Pointer[None] tag)
+use @opn_ei_retain[None](node: Pointer[None] tag)
+use @opn_ei_accept[I32](node: Pointer[None] tag, listener: I32,
+  peer: Pointer[U8] tag, peer_cap: USize)
+use @opn_ei_accept_tmo[I32](node: Pointer[None] tag, listener: I32, ms: U32,
+  peer: Pointer[U8] tag, peer_cap: USize, timed_out: Pointer[I32] tag)
 use @opn_ei_self_pid[I32](node: Pointer[None] tag, buffer: Pointer[U8] tag,
   capacity: USize, num: Pointer[U32] tag, serial: Pointer[U32] tag,
   creation: Pointer[U32] tag)
@@ -44,12 +52,32 @@ class EInterface
   let _creation: U32
   var _node: Pointer[None] = Pointer[None]
   var _connection: Connection = -1
+  var _listener: Connection = -1
+  var _published_port: U32 = 0
+  var _peer: String = ""
   var _disposed: Bool = false
 
   new create(this_nodename': String, cookie': String, creation': U32 = 0) =>
     _this_nodename = this_nodename'
     _cookie = cookie'
     _creation = creation'
+
+  new relay(node: Pointer[None] ref, connection: Connection,
+    peer: String = "")
+  =>
+    """
+    A connection that arrived on another interface's listening socket.
+
+    It shares that interface's node, and holds the node until both are done
+    with it, so neither order of disposal leaves the other with a freed node.
+    """
+    @opn_ei_retain(node)
+    _this_nodename = ""
+    _cookie = ""
+    _creation = 0
+    _node = node
+    _connection = connection
+    _peer = peer
 
   fun connected(): Bool =>
     _connection >= 0
@@ -89,13 +117,88 @@ class EInterface
       _connection = -1
     end
 
+  fun ref publish(port: U32): PublishResult =>
+    """
+    Registers this node's name with epmd and listens for connections on
+    `port`, or on a port of the system's choosing when it is zero, so that
+    other nodes can connect to this one.
+
+    The name is withdrawn with `unpublish`, or when the process ends.
+    """
+    if (_listener >= 0) or _disposed then return PublishFailed end
+    if not _ensure_node() then return PublishFailed end
+
+    var bound: U32 = 0
+    let listener = @opn_ei_publish(_node, port, addressof bound)
+    if listener < 0 then return PublishFailed end
+
+    _listener = listener
+    _published_port = bound
+    Published
+
+  fun box published_port(): U32 =>
+    """The port the listening socket took, and zero before `publish`."""
+    _published_port
+
+  fun ref unpublish() =>
+    """Withdraws the name from epmd and closes the listening socket."""
+    if _listener >= 0 then
+      @opn_ei_close_connection(_listener)
+      _listener = -1
+      _published_port = 0
+    end
+
+    if not (_disposed or _node.is_null()) then
+      @opn_ei_unpublish(_node)
+    end
+
+  fun ref accept(): AcceptResult =>
+    """Waits for another node to connect to this one."""
+    _accept(0)
+
+  fun ref accept_with_timeout(timeout_ms: U32): AcceptResult =>
+    """
+    Waits up to `timeout_ms` for another node to connect; zero waits forever
+    and is the same as `accept`.
+    """
+    _accept(timeout_ms)
+
+  fun box peer_nodename(): String =>
+    """
+    The node at the other end of an accepted connection, and empty for a
+    connection this interface opened itself.
+    """
+    _peer
+
+  fun ref _accept(timeout_ms: U32): AcceptResult =>
+    if (_listener < 0) or _disposed then return AcceptFailed end
+
+    let peer = Strings.buffer(_node_capacity())
+    var timed_out: I32 = 0
+
+    let connection =
+      if timeout_ms == 0 then
+        @opn_ei_accept(_node, _listener, peer.cpointer(), peer.size())
+      else
+        @opn_ei_accept_tmo(_node, _listener, timeout_ms, peer.cpointer(),
+          peer.size(), addressof timed_out)
+      end
+
+    if connection < 0 then
+      if timed_out != 0 then AcceptTimedOut else AcceptFailed end
+    else
+      EInterface.relay(_node, connection, Strings.null_trimmed(peer))
+    end
+
   fun ref dispose() =>
     """
     Releases the connection and the node now, not when the collector runs.
     A disposed interface does nothing on any later call.
     """
+    if _disposed then return end
     _disposed = true
     disconnect()
+    unpublish()
     if not _node.is_null() then
       @opn_ei_destroy(_node)
       _node = Pointer[None]
@@ -224,6 +327,9 @@ class EInterface
     max_atom_length + 1
 
   fun _final() =>
+    if _listener >= 0 then
+      @opn_ei_close_connection(_listener)
+    end
     if _connection >= 0 then
       @opn_ei_close_connection(_connection)
     end

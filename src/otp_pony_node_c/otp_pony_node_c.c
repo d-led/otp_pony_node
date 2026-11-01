@@ -32,6 +32,7 @@ static void opn_ei_lock_release(void) { pthread_mutex_unlock(&opn_ei_lock); }
 struct _opn_ei_t
 {
     ei_cnode cnode;
+    int owners;
 };
 
 struct _opn_ei_message_t
@@ -131,12 +132,35 @@ opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie,
         return NULL;
     }
 
+    self->owners = 1;
+
     return self;
+}
+
+void opn_ei_retain(opn_ei_t *self)
+{
+    if (!self)
+        return;
+
+    opn_ei_lock_acquire();
+    self->owners++;
+    opn_ei_lock_release();
 }
 
 void opn_ei_destroy(opn_ei_t *self)
 {
-    free(self);
+    int last;
+
+    if (!self)
+        return;
+
+    opn_ei_lock_acquire();
+    self->owners--;
+    last = self->owners <= 0;
+    opn_ei_lock_release();
+
+    if (last)
+        free(self);
 }
 
 int opn_ei_connect(opn_ei_t *self, const char *nodename)
@@ -173,6 +197,79 @@ int opn_ei_close_connection(int fd)
         return -1;
 
     return ei_close_connection(fd);
+}
+
+/* epmd is reached over a socket of its own, not through the host name lookup
+ * that opn_ei_lock guards.  ei_publish only registers the name, so the socket
+ * has to be listening before the name can be aimed at it. */
+
+/* How many connections may wait for an accept that has not been called yet. */
+#define OPN_BACKLOG 16
+
+int opn_ei_publish(opn_ei_t *self, unsigned port, unsigned *bound)
+{
+    int chosen;
+    int listener;
+
+    if (!self || !bound || port > 65535)
+        return -1;
+
+    chosen = (int)port;
+    listener = ei_listen(&self->cnode, &chosen, OPN_BACKLOG);
+    if (listener < 0)
+        return -1;
+
+    if (ei_publish(&self->cnode, (unsigned)chosen) < 0) {
+        ei_close_connection(listener);
+        return -1;
+    }
+
+    *bound = (unsigned)chosen;
+    return listener;
+}
+
+int opn_ei_unpublish(opn_ei_t *self)
+{
+    if (!self)
+        return -1;
+
+    return ei_unpublish(&self->cnode);
+}
+
+static int opn_accept_result(int connection, const ErlConnect *found,
+                             char *peer, size_t peer_cap){
+    if (connection < 0)
+        return -1;
+
+    copy_node(peer, peer_cap, found->nodename, 0);
+
+    return connection;
+}
+
+int opn_ei_accept(opn_ei_t *self, int listen_fd, char *peer, size_t peer_cap)
+{
+    ErlConnect found;
+
+    if (!self || listen_fd < 0)
+        return -1;
+
+    return opn_accept_result(ei_accept(&self->cnode, listen_fd, &found),
+                             &found, peer, peer_cap);
+}
+
+int opn_ei_accept_tmo(opn_ei_t *self, int listen_fd, unsigned ms, char *peer,
+                      size_t peer_cap, int *timed_out)
+{
+    ErlConnect found;
+    int connection;
+
+    if (!self || listen_fd < 0 || !timed_out)
+        return -1;
+
+    connection = ei_accept_tmo(&self->cnode, listen_fd, &found, ms);
+    *timed_out = is_timeout(connection);
+
+    return opn_accept_result(connection, &found, peer, peer_cap);
 }
 
 int opn_ei_self_pid(const opn_ei_t *self, char *node, size_t node_cap,

@@ -5,11 +5,17 @@ primitive ReceiveTimedOut
 primitive SentOk
 primitive SendFailed
 primitive SendTimedOut
+primitive Published
+primitive PublishFailed
+primitive AcceptFailed
+primitive AcceptTimedOut
 
 type Connection is I32
 type ConnectionStatus is (ConnectionSucceeded | ConnectionFailed)
 type ReceiveResult is (EMessage | ReceiveFailed | ReceiveTimedOut)
 type SendResult is (SentOk | SendFailed | SendTimedOut)
+type PublishResult is (Published | PublishFailed)
+type AcceptResult is (EInterface | AcceptFailed | AcceptTimedOut)
 
 primitive TermType
   """
@@ -155,5 +161,8 @@ primitive ErlError
     | -5 => "a timeout expired"
     | -6 => "cannot execute rsh"
     | 5 => "input/output error"
+    | 60 => "a timeout expired"
+    | 61 => "nothing is listening there"
+    | 98 => "the port is already in use"
     else "erl_errno " + code.string()
     end
