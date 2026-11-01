@@ -13,7 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        # The Linux release is pinned rather than following ubuntu-latest, so
+        # that Dockerfile builds the same toolchain ci-local.sh runs.  Change
+        # both together.
+        os: [ ubuntu-24.04, macos-latest ]
 
     steps:
       - name: Checkout repository

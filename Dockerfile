@@ -1,7 +1,7 @@
 # The toolchain the Native CI job installs.  setup-beam resolves
 # `otp-version: 27.2` to the newest 27.2.x on ubuntu-latest, and this image is
 # that OTP and Elixir on the same Ubuntu release, so a local run and a CI run
-# differ only in the runner.
+# differ only in the runner.  ci.yml pins ubuntu-24.04: change both together.
 FROM hexpm/elixir:1.18.2-erlang-27.2.4-ubuntu-noble-20250925
 
 ENV DEBIAN_FRONTEND=noninteractive \
