@@ -14,6 +14,7 @@ actor Main is TestList
     TermValueTest.tests(test)
     TermAccessTest.tests(test)
     TermShapeTest.tests(test)
+    ValueGetterTest.tests(test)
     BigIntegerTest.tests(test)
     ErlInterfaceTest.tests(test)
     NodeConcurrencyTest.tests(test)
