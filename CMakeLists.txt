@@ -13,9 +13,7 @@ option(OPN_WERROR "Treat compiler warnings as errors" OFF)
 set(OPN_ARTIFACT_DIR "${PROJECT_SOURCE_DIR}" CACHE PATH
     "Where the finished libotp_pony_node_c archive is written; must be on the Pony package search path")
 
-# ---------------------------------------------------------------------------
 # Locate erl_interface
-# ---------------------------------------------------------------------------
 # `ei` is the only part of erl_interface left in modern OTP and it is shipped
 # as a static archive, so the shim carries it along: Pony consumers link one
 # file and need nothing but the resulting executable at run time.
@@ -60,9 +58,7 @@ endif()
 message(STATUS "erl_interface headers: ${OPN_EI_INCLUDE_DIR}")
 message(STATUS "erl_interface archive: ${OPN_EI_LIBRARY}")
 
-# ---------------------------------------------------------------------------
 # The shim
-# ---------------------------------------------------------------------------
 add_library(otp_pony_node_c STATIC src/otp_pony_node_c/otp_pony_node_c.c)
 
 target_include_directories(otp_pony_node_c PRIVATE "${OPN_EI_INCLUDE_DIR}")
@@ -89,9 +85,7 @@ set_target_properties(otp_pony_node_c PROPERTIES
     OUTPUT_NAME otp_pony_node_c
     ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
-# ---------------------------------------------------------------------------
 # Fold ei into the shim: one archive, no runtime library search path
-# ---------------------------------------------------------------------------
 set(OPN_MERGED_ARCHIVE
     "${OPN_ARTIFACT_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}otp_pony_node_c${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
