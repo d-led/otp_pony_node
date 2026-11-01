@@ -164,5 +164,8 @@ primitive ErlError
     | 60 => "a timeout expired"
     | 61 => "nothing is listening there"
     | 98 => "the port is already in use"
+    | 104 => "the connection was reset"
+    | 110 => "a timeout expired"
+    | 111 => "nothing is listening there"
     else "erl_errno " + code.string()
     end

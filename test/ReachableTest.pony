@@ -44,6 +44,7 @@ actor _CallingNode
 
   be call() =>
     let node = EInterface(_name, "cookie")
+    node.set_tracelevel(3)
 
     match node.connect_with_timeout(_target, 10_000)
     | ConnectionFailed =>
@@ -156,6 +157,7 @@ actor _AnsweringNode
 
   be serve() =>
     let node = EInterface("pony_test_server", "cookie")
+    node.set_tracelevel(3)
 
     match node.publish(0)
     | Published => None
@@ -175,7 +177,7 @@ actor _AnsweringNode
       answer(connection)
       connection.dispose()
     | AcceptTimedOut =>
-      _h.fail("nobody was accepted")
+      _h.fail("nobody was accepted (" + node.last_error() + ")")
       _h.complete(false)
     | AcceptFailed =>
       _h.fail("accepting failed (" + node.last_error() + ")")
@@ -226,6 +228,7 @@ actor _NodeThatOutlivesItsPublisher
 
   be serve() =>
     let node = EInterface("pony_test_shared", "cookie")
+    node.set_tracelevel(3)
 
     match node.publish(0)
     | Published => None
@@ -249,7 +252,7 @@ actor _NodeThatOutlivesItsPublisher
       connection.dispose()
       _h.complete(true)
     | AcceptTimedOut =>
-      _h.fail("nobody was accepted")
+      _h.fail("nobody was accepted (" + node.last_error() + ")")
       _h.complete(false)
     | AcceptFailed =>
       _h.fail("accepting failed (" + node.last_error() + ")")
