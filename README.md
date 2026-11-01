@@ -1,60 +1,48 @@
-# Erlang C Node for the Pony Language
+# otp_pony_node
 
-[![Native CI Build and Test](https://github.com/d-led/otp_pony_node/actions/workflows/ci.yml/badge.svg)](https://github.com/d-led/otp_pony_node/actions/workflows/ci.yml)
-[![Docker CI Build and Test](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml/badge.svg)](https://github.com/d-led/otp_pony_node/actions/workflows/docker-image.yml)
+An Erlang C node for Pony. It speaks the Erlang distribution protocol through
+OTP's `ei` library and hands back Erlang terms as Pony values.
 
-An Erlang C node for **Pony**: exchange messages with the BEAM (Erlang/Elixir)
-over the standard distribution protocol, with Erlang terms as ordinary Pony
-values.
+## Status
 
-The distribution plumbing comes from OTP's `ei` (`erl_interface`). On top of it
-lives a small pure Pony layer:
+Beta. Expect breaking changes.
 
-| | |
-|---|---|
-| `EInterface` | a node: connect, receive, send, identify yourself |
-| `EMessage` | one encoded message, the low level encoder and decoder |
-| `ErlangTerm` | atoms, integers, big integers, floats, binaries, bitstrings, strings, lists, tuples, maps, pids, ports, references |
-| `ErlangTermEncoder` / `ErlangTermDecoder` | whole terms in and out |
-| `ErlangTermPrinter` | a term in Erlang syntax, for logs and tests |
+## Installation
 
-Everything that has a value has a class, so terms can be pattern matched and
-compared; the few types that cannot be modelled (funs, exports) are carried
-verbatim in `ErlangOpaque` and can still be forwarded.
+* Install [corral](https://github.com/ponylang/corral)
+* `corral add github.com/d-led/otp_pony_node.git`
+* `corral fetch` to fetch your dependencies
+* `use "erl_interface_pony"` to include this package
+* `corral run -- ponyc` to compile your application
 
-## Requirements
-
-- **Erlang/OTP** with `erl_interface` (`ei.h` and the static archive `libei.a`).
-- **Pony** (`ponyc`), installed with [ponyup](https://github.com/ponylang/ponyup).
-- **CMake ≥ 3.20** and a C11 compiler, to build the native shim.
-
-`erl_interface` is located automatically by asking the `erl` on your `PATH`.
-To point at a specific installation, configure with
-`-DOPN_EI_DIR=/path/to/lib/erlang/lib/erl_interface-X.Y`.
-
-## Using it from Corral
+The native shim is built once, because corral does not run build scripts for
+native code:
 
 ```bash
-corral add github.com/d-led/otp_pony_node.git
-corral fetch
-
-# Corral does not run build scripts for native code, so build the shim once:
-make -C _corral/github_com_d-led_otp_pony_node
+make -C _corral/github_com_d_led_otp_pony_node
 ```
 
-That produces `libotp_pony_node_c.a` in the package directory: a **single self
-contained static archive** with `ei` folded in. Nothing has to be copied next to
-your binary and no library search path is needed at run time.
-
-Then use the package from your program:
+That writes `libotp_pony_node_c.a` into the package directory. It is a single
+archive with `ei` inside it, so your program needs no library search path at run
+time. Point the compiler at it from your own code:
 
 ```pony
-use "path:_corral/github_com_d-led_otp_pony_node"
+use "path:_corral/github_com_d_led_otp_pony_node"
 use "lib:otp_pony_node_c"
 use "erl_interface_pony"
 ```
 
-## Talking to a node
+## Dependencies
+
+Erlang/OTP with `erl_interface`, which provides `ei.h` and the static archive
+`libei.a`. Erlang/OTP ships both together; a distribution that splits it puts
+them in the `erl_interface` development package.
+
+Building the shim needs CMake 3.20 or newer and a C11 compiler. The build reads
+`include/ei.h` and `lib/libei.a` out of the installation that `erl` on your
+`PATH` reports, and `-DOPN_EI_DIR=<dir>` overrides that.
+
+## Usage
 
 ```pony
 use "erl_interface_pony"
@@ -72,22 +60,20 @@ actor PonyNode
     | ConnectionFailed =>
       _env.out.print("Pony: connection failed (" + _erl.last_error() + ")")
       return
-    | ConnectionSucceeded =>
-      _env.out.print("Pony: connected as " + _erl.this_nodename())
+    | ConnectionSucceeded => None
     end
 
     receive_loop()
 
   be receive_loop() =>
     match _erl.receive_with_timeout(5_000)
-    | ReceiveFailed  => return
+    | ReceiveFailed => return
     | ReceiveTimedOut => return
-    | let message: EMessage =>
-      reply(message)
+    | let message: EMessage => answer(message)
     end
     receive_loop()
 
-  fun ref reply(message: EMessage ref) =>
+  fun ref answer(message: EMessage ref) =>
     match ErlangTermDecoder.decode(message)
     | let call: ErlangTuple =>
       try
@@ -96,26 +82,26 @@ actor PonyNode
         _env.out.print("Pony: \"" + text.value + "\" from " + sender.string())
 
         let self_pid = _erl.self_pid()?
-        let answer: Array[ErlangTerm] val = [
+        let body: Array[ErlangTerm] val = [
           ErlangAtom("reply")
           ErlangBinary("hello from Pony!")
           self_pid
         ]
-        let encoded = EMessage.begin()
-        encoded.encode(ErlangTuple(answer))?
-        _erl.send_to(sender, encoded, 500)
+
+        let reply = EMessage.begin()
+        reply.encode(ErlangTuple(body))?
+        _erl.send_to(sender, reply, 500)
       end
     else
       _env.out.print("Pony: not a {Pid, Binary} call")
     end
 ```
 
-`receive_with_timeout(0)` waits forever. Sending to a process registered under a
-name goes through `send_to_registered`.
+`receive_with_timeout(0)` waits forever. `send_to_registered` sends to a process
+registered under a name. `dispose()` releases the socket and the node
+immediately; the garbage collector releases them otherwise.
 
-## Terms
-
-Encode a term to bytes, decode it back, and print it:
+Terms encode and decode as whole values:
 
 ```pony
 let pairs: Array[(ErlangTerm, ErlangTerm)] val =
@@ -123,82 +109,73 @@ let pairs: Array[(ErlangTerm, ErlangTerm)] val =
 
 let message = EMessage.begin()
 message.encode(ErlangTuple([ErlangAtom("reply"); ErlangMap(pairs)]))?
-ErlangTermPrinter.string(ErlangTuple([...]))   // {reply, #{a => 1, b => 2.5}}
 
 match ErlangTermDecoder.decode(message)
-| let term: ErlangTuple => ...  // elements are ErlangTerm again
-else                          // the message did not decode
+| let term: ErlangTerm => ErlangTermPrinter.string(term)  // {reply, #{a => 1, b => 2.5}}
+else None  // the bytes were not a term
 end
 ```
 
-Low level access is available too: `encode_atom`, `encode_int`,
-`encode_binary`, `encode_list_header`, `encode_map_header`, `encode_pid`,
-`encode_port`, `encode_reference`, … and the matching `decode_*` functions,
-each of which reports the position just past the term it read.
+Each wire type has a class: `ErlangAtom`, `ErlangInteger`, `ErlangBigInteger`,
+`ErlangFloat`, `ErlangBinary`, `ErlangBitstring`, `ErlangString`,
+`ErlangList` (proper and improper), `ErlangTuple`, `ErlangMap`, `ErlangPid`,
+`ErlangPort`, `ErlangReference`. Funs and exports arrive as `ErlangOpaque`,
+which carries their encoded bytes so they can be forwarded.
 
-### What maps to what
+They are value classes: `==` compares contents and `hash()` agrees with it, so a
+concrete term can be a `Map` or `Set` key. `ErlangTerm` is a union of classes
+whose `eq` methods take different types, so `==` does not apply to the union;
+a value known only as an `ErlangTerm` compares through `ErlangTerms.eq` and
+hashes through `ErlangTerms.hash`.
 
-| Erlang | Pony |
-|---|---|
-| `atom` | `ErlangAtom` |
-| `-1`, `42` | `ErlangInteger` (`I64`) |
-| integers wider than 64 bits | `ErlangBigInteger`, `.decimal()` to read |
-| `1.5` | `ErlangFloat` (`F64`) |
-| `<<"bytes">>` | `ErlangBinary` (raw bytes, NUL safe) |
-| `<<1:3>>` | `ErlangBitstring` (unused trailing bits cleared) |
-| `"abc"` | `ErlangString` (a byte charlist) |
-| `[1, 2 \| 3]` | `ErlangList` with an improper `tail` |
-| `{a, b}` | `ErlangTuple` |
-| `#{a => 1}` | `ErlangMap`, as key/value pairs in wire order |
-| `<0.1.0>` | `ErlangPid` |
-| `#Port<…>` | `ErlangPort` |
-| `#Ref<…>` | `ErlangReference` |
-| funs, exports, anything newer | `ErlangOpaque`, forwarded unchanged |
+`ErlangInteger` holds 64 bits. A wider integer arrives as `ErlangBigInteger`,
+which stores the magnitude and gives the digits through `decimal()`.
 
-Two consequences of the wire format are worth knowing: a byte aligned
-bitstring *is* a binary, and an empty bitstring decodes as an `ErlangBinary`.
-`ErlangTerms.eq` compares terms structurally; maps compare in wire order.
+Three of the comparisons follow Erlang rather than the host language: floats
+compare bit for bit, as `=:=` does, so `0.0` and `-0.0` differ; maps compare as
+sets of pairs, so the order they were written in does not matter; and a byte
+aligned bitstring is a binary in the external format, so it decodes as
+`ErlangBinary`. Unused bits in the last byte of a partial bitstring are cleared
+on construction, which is what the format carries.
 
 ## Limitations
 
-- Links, monitors and exit signals are delivered by the BEAM but not modelled;
-  only `SEND` and `REG_SEND` messages carry a term this library decodes.
-- Distribution compression and TLS are not implemented.
-- `ErlangOpaque` terms can be forwarded, not inspected.
-- Terms are decoded recursively, so a pathologically deep term from an
-  untrusted peer can exhaust the stack.
+* Links, monitors and exit signals reach the node but are not modelled. Only
+  `SEND` and `REG_SEND` messages carry a term this library decodes.
+* Distribution compression and TLS are not implemented.
+* Terms decode recursively, so a very deep term from an untrusted peer can
+  exhaust the stack.
+* `ErlangOpaque` terms can be forwarded, not inspected.
 
-## Building this repository
+## API Documentation
+
+The docstrings in [`erl_interface_pony/`](https://github.com/d-led/otp_pony_node/tree/master/erl_interface_pony)
+are the reference.
+
+## Working on this library
 
 ```bash
-./build.sh          # native shim + demo + tests
-./build.sh --debug  # same, unoptimised
+./build.sh          # native shim, demo and tests
+./build.sh --debug  # the same, unoptimised
 ./test.sh           # unit tests, no Erlang node needed
-./integration.sh    # round trip against a live Elixir node (needs Elixir)
+./integration.sh    # round trip against a live Elixir node, needs Elixir
 ```
 
-`./demo_exs.sh` runs the Elixir side of the demo in the foreground if you want to
-watch the exchange, then run `./otp_pony_node` in another terminal.
+`./demo_exs.sh` runs the Elixir side of the demo in the foreground; run
+`./otp_pony_node` from another terminal to watch the exchange.
 
-### The build
-
-The native part is [CMake](CMakeLists.txt) with presets:
+The native part is CMake, with presets in `CMakePresets.json`:
 
 ```bash
 cmake --preset debug
 cmake --build --preset debug
 ```
 
-`cmake/MergeStaticLibraries.cmake` folds `libei.a` into
-`libotp_pony_node_c.a` so consumers link exactly one file, and
-`cmake/toolchains/zig.cmake` lets you build with `zig cc` instead of the system
-compiler (`cmake --preset zig`).
+Zig can be the compiler (`cmake --preset zig`) but not the build system.
+`erl_interface` comes from the host, so there is nothing to cross compile, and
+`build.zig` would add a second language to read for no gain.
 
-This repository used premake before: it committed prebuilt `premake5` binaries
-for three platforms and generated project files that were checked in. CMake
-removes both, finds `erl_interface` in the same way the old Lua script did, and
-gives IDEs and CI one entry point. Zig is a good *compiler* choice here (one
-toolchain on every platform, no `libstdc++`/`libc++` mismatch), but not a good
-*build system* choice: `ei` has to be found on the host, so there is nothing to
-cross compile, and `build.zig` would be one more thing to learn. Hence CMake for
-orchestration, zig as an optional toolchain.
+The shim lives in `src/otp_pony_node_c/`, not next to the Pony sources. ponyc
+compiles a `.c` file that sits in a module directory and links it into the
+program, which would make every consumer build `ei` from scratch and need the
+`ei.h` include path of that machine.

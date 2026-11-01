@@ -10,6 +10,7 @@ use @opn_ei_destroy[None](node: Pointer[None] tag)
 use @opn_ei_connect[I32](node: Pointer[None] tag, nodename: Pointer[U8] tag)
 use @opn_ei_connect_tmo[I32](node: Pointer[None] tag, nodename: Pointer[U8] tag,
   timeout_ms: U32)
+use @opn_ei_close_connection[I32](connection: I32)
 use @opn_ei_self_pid[I32](node: Pointer[None] tag, buffer: Pointer[U8] tag,
   capacity: USize, num: Pointer[U32] tag, serial: Pointer[U32] tag,
   creation: Pointer[U32] tag)
@@ -34,7 +35,8 @@ class EInterface
 
   One `EInterface` owns one connection.  `connect` creates the node on first
   use, so the node name is available before it is connected, and `disconnect`
-  closes the connection without throwing the node away.
+  closes the connection without throwing the node away.  `dispose` releases
+  both, and an interface that has been disposed stays inert.
   """
 
   let _this_nodename: String
@@ -42,6 +44,7 @@ class EInterface
   let _creation: U32
   var _node: Pointer[None] = Pointer[None]
   var _connection: Connection = -1
+  var _disposed: Bool = false
 
   new create(this_nodename': String, cookie': String, creation': U32 = 0) =>
     _this_nodename = this_nodename'
@@ -81,7 +84,22 @@ class EInterface
 
   fun ref disconnect() =>
     """Closes the connection.  The node itself stays usable for a new one."""
-    _connection = -1
+    if _connection >= 0 then
+      @opn_ei_close_connection(_connection)
+      _connection = -1
+    end
+
+  fun ref dispose() =>
+    """
+    Releases the connection and the node now, not when the collector runs.
+    A disposed interface does nothing on any later call.
+    """
+    _disposed = true
+    disconnect()
+    if not _node.is_null() then
+      @opn_ei_destroy(_node)
+      _node = Pointer[None]
+    end
 
   fun ref receive(): ReceiveResult =>
     """Waits for a message."""
@@ -104,7 +122,9 @@ class EInterface
       EMessage.from_cpointer(message)
     end
 
-  fun ref send_to(to: ErlangPid, what: EMessage ref, timeout_ms: U32): SendResult =>
+  fun ref send_to(to: ErlangPid, what: EMessage ref, timeout_ms: U32)
+    : SendResult
+  =>
     """Sends an encoded message to a process."""
     if not connected() then return SendFailed end
 
@@ -164,8 +184,10 @@ class EInterface
     ErlError.describe(@opn_erl_errno())
 
   fun ref _ensure_node(): Bool =>
+    if _disposed then return false end
     if _node.is_null() then
-      _node = @opn_ei_new(_this_nodename.cstring(), _cookie.cstring(), _creation)
+      _node = @opn_ei_new(_this_nodename.cstring(), _cookie.cstring(),
+        _creation)
     end
     not _node.is_null()
 
@@ -202,6 +224,9 @@ class EInterface
     max_atom_length + 1
 
   fun _final() =>
+    if _connection >= 0 then
+      @opn_ei_close_connection(_connection)
+    end
     if not _node.is_null() then
       @opn_ei_destroy(_node)
     end

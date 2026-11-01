@@ -260,7 +260,7 @@ primitive ErlangTermDecoder
   fun _decode_verbatim(message: EMessage ref, position: I32, type_tag: I32)
     : ((ErlangTerm | None), I32)
   =>
-    """Keeps a term this library does not model, so it can still be forwarded."""
+    """Keeps a term this library does not model, to be forwarded unchanged."""
     let next = message.skip_term(position)
     if next < 0 then return (None, position) end
 
@@ -271,7 +271,8 @@ primitive ErlangTermDecoder
 
   fun _plausible_arity(message: EMessage ref, arity: I32): Bool =>
     """
-    Guards against a header that claims more elements than the message can hold,
-    so a corrupt message cannot make us allocate without bound.
+    An arity larger than the message length cannot be real, because every
+    element takes at least one byte.  Rejecting it keeps a small message from
+    reserving an enormous array.
     """
     (arity >= 0) and (arity.i64() <= message.length().i64())

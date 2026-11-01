@@ -39,16 +39,12 @@ extern "C" {
 typedef struct _opn_ei_t opn_ei_t;
 typedef struct _opn_ei_message_t opn_ei_message_t;
 
-/* -- diagnostics ------------------------------------------------------- */
-
 /* The `erl_errno` value of the calling thread. */
 OPN_API int opn_erl_errno(void);
 
 OPN_API void opn_set_tracelevel(int level);
 OPN_API int opn_ei_get_tracelevel(void);
 OPN_API void opn_ei_set_compat_rel(unsigned rel);
-
-/* -- node -------------------------------------------------------------- */
 
 OPN_API opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie,
                              unsigned creation);
@@ -58,6 +54,7 @@ OPN_API void opn_ei_destroy(opn_ei_t *self);
 OPN_API int opn_ei_connect(opn_ei_t *self, const char *nodename);
 OPN_API int opn_ei_connect_tmo(opn_ei_t *self, const char *nodename,
                                unsigned ms);
+OPN_API int opn_ei_close_connection(int fd);
 
 OPN_API int opn_ei_self_pid(const opn_ei_t *self, char *node, size_t node_cap,
                             unsigned *num, unsigned *serial,
@@ -70,17 +67,18 @@ OPN_API int opn_ei_thishostname(const opn_ei_t *self, char *buffer,
 OPN_API int opn_ei_thisalivename(const opn_ei_t *self, char *buffer,
                                  size_t cap);
 
-/* -- messages ---------------------------------------------------------- */
-
 OPN_API opn_ei_message_t *opn_ei_message_new(void);
 OPN_API void opn_ei_message_destroy(opn_ei_message_t *self);
 
 /* Number of encoded bytes written so far. */
 OPN_API int opn_ei_message_length(const opn_ei_message_t *self);
+/* The write position, for rolling a failed encode back. */
+OPN_API int opn_ei_message_index(const opn_ei_message_t *self);
+OPN_API int opn_ei_message_truncate(opn_ei_message_t *self, int index);
 /* First position after the protocol version byte. */
 OPN_API int opn_ei_message_beginning(const opn_ei_message_t *self);
 
-/* The external-format type character and payload size of the term at `index`. */
+/* The type character and payload size of the term at `index`. */
 OPN_API int opn_ei_message_type_at(const opn_ei_message_t *self, int index,
                                    int *type, int *size);
 /* Position just past the term at `index`, whatever its type. */
@@ -98,8 +96,6 @@ OPN_API int opn_ei_message_from(const opn_ei_message_t *self, char *node,
                                 size_t node_cap, unsigned *num,
                                 unsigned *serial, unsigned *creation);
 
-/* -- transport --------------------------------------------------------- */
-
 /* Polls the connection.  `ms == 0` blocks. */
 OPN_API opn_ei_message_t *opn_ei_receive_tmo(int fd, unsigned ms,
                                              int *timed_out);
@@ -110,9 +106,6 @@ OPN_API int opn_ei_send_tmo(int fd, const char *node, unsigned num,
 OPN_API int opn_ei_reg_send_tmo(opn_ei_t *self, int fd, const char *server,
                                 const opn_ei_message_t *what, unsigned ms,
                                 int *timed_out);
-
-/* -- decoding ---------------------------------------------------------- */
-/* Every decoder returns 0 on success and a negative value on failure. */
 
 OPN_API int opn_ei_message_decode_atom(const opn_ei_message_t *self,
                                        int *index, char *buffer, size_t cap);
@@ -147,9 +140,6 @@ OPN_API int opn_ei_message_decode_ref(const opn_ei_message_t *self,
                                       int *index, char *node, size_t node_cap,
                                       unsigned *ids, int ids_cap,
                                       int *id_count, unsigned *creation);
-
-/* -- encoding ---------------------------------------------------------- */
-/* Every encoder returns 0 on success and a negative value on failure. */
 
 OPN_API int opn_ei_message_encode_atom(opn_ei_message_t *self,
                                        const char *what);

@@ -1,24 +1,40 @@
-class val ErlangBigInteger is Stringable
+use "collections"
+
+class val ErlangBigInteger
+  is (Equatable[ErlangBigInteger] & Hashable & Stringable)
   """
-  An integer that does not fit into 64 bits.
+  An integer wider than 64 bits.
 
   It is kept the way the external format keeps it - a sign and a magnitude in
   base 256, least significant byte first - so nothing is lost on the way in or
   out, and `decimal()` is only computed when a person needs to read it.
+
+  The magnitude is normalised on construction: trailing zero digits are
+  dropped and zero is stored as no digits with a positive sign.  An integer
+  that fits into 64 bits arrives as `ErlangInteger` instead, so a value that
+  was built here can decode as a different class.
   """
 
   let negative: Bool
   let digits: Array[U8] val
 
   new val create(negative': Bool, digits': Array[U8] val) =>
-    negative = negative'
-    digits = digits'
+    (let canonical, let sign) =
+      ErlangTerms._canonical_digits(digits', negative')
+    digits = canonical
+    negative = sign
 
   fun is_zero(): Bool =>
     for digit in digits.values() do
       if digit != 0 then return false end
     end
     true
+
+  fun eq(that: box->ErlangBigInteger): Bool =>
+    (negative == that.negative) and ErlangTerms._bytes_eq(digits, that.digits)
+
+  fun hash(): USize =>
+    (if negative then 3 else 1 end) xor (ErlangTerms._bytes_hash(digits) << 1)
 
   fun decimal(): String iso^ =>
     """The value in base 10, with a leading minus sign when negative."""

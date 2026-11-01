@@ -11,5 +11,7 @@ actor Main is TestList
     EncodingDecodingTest.tests(test)
     TermRoundtripTest.tests(test)
     TermPrinterTest.tests(test)
+    TermValueTest.tests(test)
     BigIntegerTest.tests(test)
     ErlInterfaceTest.tests(test)
+    ResourceLifecycleTest.tests(test)

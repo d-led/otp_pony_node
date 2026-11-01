@@ -18,8 +18,6 @@ struct _opn_ei_message_t
     ei_x_buff buff;
 };
 
-/* -- helpers ----------------------------------------------------------- */
-
 /* Copies exactly `len` bytes of an erlang node name into a NUL terminated
  * buffer.  Node names are bounded by MAXATOMLEN_UTF8, callers still pass a
  * capacity so a malformed term cannot overrun them. */
@@ -58,7 +56,14 @@ static int is_timeout(int result)
            || (erl_errno == ERL_TIMEOUT);
 }
 
-/* -- diagnostics -------------------------------------------------------- */
+/* A term declares its payload length in its own bytes, and ei_decode_* takes
+ * no capacity, so a declared length is only safe once it fits in what has
+ * actually arrived.  Reads past ei_x_buff would come out of the heap. */
+static int payload_fits(const opn_ei_message_t *self, int index, int size)
+{
+    return size >= 0 && index >= 0 && index < self->buff.index
+           && size <= self->buff.index - index;
+}
 
 int opn_erl_errno(void)
 {
@@ -79,8 +84,6 @@ void opn_ei_set_compat_rel(unsigned rel)
 {
     ei_set_compat_rel(rel);
 }
-
-/* -- node --------------------------------------------------------------- */
 
 opn_ei_t *opn_ei_new(const char *this_nodename, const char *cookie,
                      unsigned creation)
@@ -125,6 +128,14 @@ int opn_ei_connect_tmo(opn_ei_t *self, const char *nodename, unsigned ms)
     return ei_connect_tmo(&self->cnode, (char *)nodename, ms);
 }
 
+int opn_ei_close_connection(int fd)
+{
+    if (fd < 0)
+        return -1;
+
+    return ei_close_connection(fd);
+}
+
 int opn_ei_self_pid(const opn_ei_t *self, char *node, size_t node_cap,
                     unsigned *num, unsigned *serial, unsigned *creation)
 {
@@ -162,8 +173,6 @@ int opn_ei_thisalivename(const opn_ei_t *self, char *buffer, size_t cap)
                 : -1;
 }
 
-/* -- messages ----------------------------------------------------------- */
-
 opn_ei_message_t *opn_ei_message_new(void)
 {
     opn_ei_message_t *self = (opn_ei_message_t *)calloc(1, sizeof(*self));
@@ -191,6 +200,21 @@ void opn_ei_message_destroy(opn_ei_message_t *self)
 int opn_ei_message_length(const opn_ei_message_t *self)
 {
     return self ? self->buff.index : 0;
+}
+
+int opn_ei_message_index(const opn_ei_message_t *self)
+{
+    return self ? self->buff.index : 0;
+}
+
+int opn_ei_message_truncate(opn_ei_message_t *self, int index)
+{
+    /* One is the version byte: everything after it belongs to terms. */
+    if (!self || index < 1 || index > self->buff.index)
+        return -1;
+
+    self->buff.index = index;
+    return 0;
 }
 
 int opn_ei_message_beginning(const opn_ei_message_t *self)
@@ -278,8 +302,6 @@ int opn_ei_message_from(const opn_ei_message_t *self, char *node,
 
     return copy_node(node, node_cap, self->msg.from.node, 0);
 }
-
-/* -- transport ---------------------------------------------------------- */
 
 opn_ei_message_t *opn_ei_receive_tmo(int fd, unsigned ms, int *timed_out)
 {
@@ -374,14 +396,20 @@ int opn_ei_reg_send_tmo(opn_ei_t *self, int fd, const char *server,
     return res;
 }
 
-/* -- decoding ----------------------------------------------------------- */
-/* `ei.h` uses `long` and `int` in its signatures; the values are converted
- * here so the published API keeps fixed-width types on every platform. */
-
+/* The opn_ei_message_decode_* functions convert the `long` and `int` values
+ * that ei.h uses into fixed-width types, so the published API has one width on
+ * every platform. */
 int opn_ei_message_decode_atom(const opn_ei_message_t *self, int *index,
                                char *buffer, size_t cap)
 {
+    int size = 0;
+    int type = 0;
+
     if (!index_is_sane(self, *index) || !buffer || cap == 0)
+        return -1;
+
+    ei_get_type(self->buff.buff, index, &type, &size);
+    if (!payload_fits(self, *index, size))
         return -1;
 
     return ei_decode_atom(self->buff.buff, index, buffer);
@@ -415,11 +443,14 @@ int opn_ei_message_decode_binary(const opn_ei_message_t *self, int *index,
                                  char *buffer, size_t cap, long long *len)
 {
     long decoded = 0;
+    int size = 0;
+    int type = 0;
 
     if (!index_is_sane(self, *index) || !buffer || !len)
         return -1;
 
-    if ((size_t)self->buff.index < cap)
+    ei_get_type(self->buff.buff, index, &type, &size);
+    if (!payload_fits(self, *index, size) || (size_t)size > cap)
         return -1;
 
     if (ei_decode_binary(self->buff.buff, index, buffer, &decoded) < 0)
@@ -437,10 +468,13 @@ int opn_ei_message_decode_bitstring(const opn_ei_message_t *self, int *index,
     unsigned int bit_offset = 0;
     size_t bit_count = 0;
     size_t byte_count;
+    size_t arrived;
 
     if (!index_is_sane(self, *index) || !buffer || !len ||
             !used_bits_in_last_byte)
         return -1;
+
+    arrived = (size_t)(self->buff.index - *index);
 
     if (ei_decode_bitstring(self->buff.buff, index, &bits, &bit_offset,
             &bit_count) < 0)
@@ -450,7 +484,7 @@ int opn_ei_message_decode_bitstring(const opn_ei_message_t *self, int *index,
         return -1;
 
     byte_count = (bit_count + 7) / 8;
-    if (byte_count > cap)
+    if (byte_count > cap || byte_count > arrived)
         return -1;
 
     if (byte_count > 0)
@@ -465,7 +499,14 @@ int opn_ei_message_decode_bitstring(const opn_ei_message_t *self, int *index,
 int opn_ei_message_decode_string(const opn_ei_message_t *self, int *index,
                                  char *buffer, size_t cap)
 {
+    int size = 0;
+    int type = 0;
+
     if (!index_is_sane(self, *index) || !buffer || cap == 0)
+        return -1;
+
+    ei_get_type(self->buff.buff, index, &type, &size);
+    if (!payload_fits(self, *index, size) || (size_t)size > cap)
         return -1;
 
     return ei_decode_string(self->buff.buff, index, buffer);
@@ -564,8 +605,6 @@ int opn_ei_message_decode_ref(const opn_ei_message_t *self, int *index,
 
     return copy_node(node, node_cap, ref.node, 0);
 }
-
-/* -- encoding ----------------------------------------------------------- */
 
 int opn_ei_message_encode_atom(opn_ei_message_t *self, const char *what)
 {
