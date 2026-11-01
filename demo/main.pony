@@ -35,10 +35,14 @@ actor PonyNode
     match _erl.publish(port)
     | PublishFailed =>
       _env.out.print("Pony: cannot be reached (" + _erl.last_error() + ")")
+      _env.out.flush()
       return
     | Published =>
       _env.out.print("Pony: " + _erl.this_nodename() + " listening on port "
         + _erl.published_port().string())
+      // The name is what the other side calls, and a pipe would hold the line
+      // until the process has written enough or has ended.
+      _env.out.flush()
     end
 
     accept_loop()

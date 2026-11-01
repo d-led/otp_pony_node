@@ -67,18 +67,18 @@ fi
 
 echo "the Pony node answered the Elixir node"
 
-# The Pony node is called in, and answers.  The name it published is read back
-# from its own report, since the case of a host name is spelled one way by the
-# node and another by whoever looks it up.
+# The Pony node is called in, and answers.  The name it publishes is read back
+# from its own report, which it flushes as soon as it is listening: a host name
+# is spelled one way by the node and another by whoever looks it up.
 ./otp_pony_node --listen "$port" > "$pony_log" 2>&1 &
 pony_pid=$!
 
-# The node reports that it listens once it is registered, which on a busy
-# machine can take longer than a node starting up does.
 wait_for_the_node_to_listen() {
   local attempts=300
   while [ "$attempts" -gt 0 ]; do
-    if grep -q " listening on port " "$pony_log"; then return 0; fi
+    if grep -q " listening on port " "$pony_log"; then
+      return 0
+    fi
 
     if ! kill -0 "$pony_pid" 2>/dev/null; then
       echo "the Pony node stopped before it published itself:" >&2
