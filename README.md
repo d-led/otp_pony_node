@@ -10,27 +10,52 @@ Beta. Expect breaking changes.
 ## Installation
 
 * Install [corral](https://github.com/ponylang/corral)
-* `corral add github.com/d-led/otp_pony_node.git`
+* `corral add github.com/d-led/otp_pony_node.git --version 0.2.0`
 * `corral fetch` to fetch your dependencies
 * `use "erl_interface_pony"` to include this package
 * `corral run -- ponyc` to compile your application
 
-The native shim is built once, because corral does not run build scripts for
-native code:
+## Using it from corral
+
+Corral keeps its working directories inside your project, and the dependency
+lands in `_corral/github_com_d_led_otp_pony_node`: the locator with every dot
+and slash turned into an underscore, and the `.git` suffix dropped. `_corral`
+and `_repos` belong in your `.gitignore`, because corral maintains them.
+
+`corral fetch` obtains the dependencies that are missing, and `corral update`
+is what moves one that is already there to the revision `corral.json` asks for.
+After a version change, run `corral update` and then rebuild the shim below.
+
+Corral fetches Pony sources and runs no build script, so the native shim is
+built once, in the copy:
 
 ```bash
 make -C _corral/github_com_d_led_otp_pony_node
 ```
 
-That writes `libotp_pony_node_c.a` into the package directory. It is a single
-archive with `ei` inside it, so your program needs no library search path at run
-time. Point the compiler at it from your own code:
+That writes `libotp_pony_node_c.a` beside the package: one archive with `ei`
+inside it, so the compiled program wants no `ei` at run time and nothing to
+find on a library path. The archive is a build artifact, so a fresh clone of
+your project needs the `make` again. CMake and the Erlang installation are
+needed for it and not after it.
+
+The package declares `use "lib:otp_pony_node_c"` itself, so your sources name
+only the package:
 
 ```pony
-use "path:_corral/github_com_d_led_otp_pony_node"
-use "lib:otp_pony_node_c"
 use "erl_interface_pony"
 ```
+
+That is enough because `corral run -- ponyc` puts each dependency directory on
+the compiler's search path, and the linker is given those directories too.
+Compiling without corral means passing the dependency directory yourself:
+
+```bash
+ponyc -p path/to/otp_pony_node
+```
+
+[`corral_demo/`](https://github.com/d-led/otp_pony_node/tree/master/corral_demo)
+is a project set up this way, and `run_demo.sh` in it runs each step.
 
 ## Dependencies
 

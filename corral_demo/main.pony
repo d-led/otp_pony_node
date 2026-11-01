@@ -1,7 +1,7 @@
 use "erl_interface_pony"
 
-// The native archive is built in the dependency directory by run_demo.sh.
-use "path:_corral/github_com_d_led_otp_pony_node"
+// Nothing to add for the native archive: corral puts the dependency directory
+// on the compiler's search path, and the package links the archive itself.
 
 actor Main
   """
