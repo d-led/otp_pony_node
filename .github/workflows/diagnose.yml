@@ -53,6 +53,75 @@ jobs:
           command -v epmd || true
           epmd -names || true
 
+      - name: What publishing and accepting look like here
+        run: |
+          mkdir -p /tmp/probe
+          cat > /tmp/probe/main.pony <<'PONY'
+          use "erl_interface_pony"
+
+          actor _Caller
+            let _target: String
+            let _env: Env
+
+            new create(target: String, env: Env) =>
+              _target = target
+              _env = env
+
+            be call() =>
+              let node = EInterface("probe_caller", "cookie")
+              node.set_tracelevel(3)
+
+              match node.connect_with_timeout(_target, 10_000)
+              | ConnectionSucceeded => _env.out.print("caller: connected")
+              | ConnectionFailed =>
+                _env.out.print("caller: failed (" + node.last_error() + ")")
+              end
+
+          actor _Server
+            let _env: Env
+
+            new create(env: Env) =>
+              _env = env
+
+            be serve() =>
+              let node = EInterface("probe_server", "cookie")
+              node.set_tracelevel(3)
+
+              match node.publish(0)
+              | Published =>
+                _env.out.print("server: " + node.this_nodename() + " on port "
+                  + node.published_port().string())
+              | PublishFailed =>
+                _env.out.print("server: cannot publish ("
+                  + node.last_error() + ")")
+                return
+              end
+
+              _Caller(node.this_nodename(), _env).call()
+
+              match node.accept_with_timeout(10_000)
+              | let connection: EInterface =>
+                _env.out.print("server: accepted " + connection.peer_nodename())
+                connection.dispose()
+              | AcceptTimedOut => _env.out.print("server: nobody called")
+              | AcceptFailed =>
+                _env.out.print("server: accepting failed ("
+                  + node.last_error() + ")")
+              end
+
+              node.dispose()
+
+          actor Main
+            new create(env: Env) =>
+              _Server(env).serve()
+          PONY
+          cd /tmp/probe
+          ponyc -p "$GITHUB_WORKSPACE" -b probe 2>&1 | tail -5
+          epmd -daemon || true
+          timeout 40 ./probe 2>&1 | head -60
+          echo '--- epmd, after ---'
+          epmd -names || true
+
       - name: Run the tests with a watchdog
         timeout-minutes: 30
         run: |
