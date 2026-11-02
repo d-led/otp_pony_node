@@ -10,6 +10,7 @@ actor Main is TestList
   fun tag tests(test: PonyTest) =>
     EncodingDecodingTest.tests(test)
     TermRoundtripTest.tests(test)
+    TermPropertyTest.tests(test)
     TermPrinterTest.tests(test)
     TermValueTest.tests(test)
     TermAccessTest.tests(test)

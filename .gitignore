@@ -144,6 +144,11 @@ demo.log
 docs/api/
 site/
 
+### Test run state ###
+# A property test writes the choices that made it fail here, so that the next
+# run reproduces them.
+.ponytest/
+
 ### macOS ###
 .DS_Store
 *.dSYM/
