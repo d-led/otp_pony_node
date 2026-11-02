@@ -165,6 +165,8 @@ types its elements must have. A decoder is the one place that does it, and
 handlers then work with a value of their own:
 
 ```pony
+use "erl_interface_pony"
+
 class val Call
   """A `{Pid, Binary}` message, in the types a handler wants."""
   let sender: ErlangPid
@@ -300,6 +302,7 @@ guide, and a page for every type, generated from the docstrings in
 ./integration.sh    # round trip against a live Elixir node, needs Elixir
 ./ci-local.sh       # the Linux CI job, in a container
 ./docs.sh           # the documentation site, needs mkdocs-material
+./check_examples.py # every complete example in the markdown, compiled
 ```
 
 The container carries the toolchain the Linux job installs: `ci.yml` asks for

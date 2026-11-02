@@ -58,6 +58,8 @@ A handler is easier to read when it never sees a term. Decode into a value of
 your own in one function:
 
 ```pony
+use "erl_interface_pony"
+
 class val Call
   let sender: ErlangPid
   let text: String

@@ -78,6 +78,10 @@ for path in list(api.glob("*.md")) + list(sources.glob("*.md")):
     path.write_text(rewrite(path.read_text()))
 PY
 
+# The examples in the pages are compiled first: a page that shows code which no
+# longer builds is a broken page, whatever the site looks like.
+./check_examples.py
+
 if [ "${1:-}" = "--serve" ]; then
   exec mkdocs serve
 fi
