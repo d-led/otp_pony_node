@@ -12,7 +12,7 @@ A receive with a time limit counts the time from the call. The polls that arrive
 
 A connection stays reachable while it is read. The C library answers the other side's polls from inside a receive, and a connection that nobody reads for longer than the other node's `net_ticktime` (sixty seconds by default) is dropped and reported as down there. This side does not poll, so it notices a connection that went away on the next read or write.
 
-The demo reads a served connection for sixty seconds instead of five, which was shorter than the caller's patience and dropped it while it was still quiet.
+The demo used to stop reading a served connection after five seconds of quiet, which cut off a caller that was silent for longer; it reads for sixty seconds now.
 
 ## 0.7.1 — 2026-11-02
 
@@ -56,13 +56,13 @@ actor Listener
 
 ### Fixed
 
-`dispose` takes the node's name out of epmd, so a node that was let go cannot be called any more.
+`dispose` closes the listening socket before it lets go of the node, so a node that was disposed cannot be called any more. The name stays with epmd until the process ends, so one process publishes a given name once.
 
 ## 0.6.0 — 2026-11-01
 
 ### Added
 
-`ErlangShape.pair` and `ErlangShape.triple` read a decoded message as the two or three values a handler expects, so `{Pid, Binary}` is matched as a pair rather than indexed.
+`ErlangShapes.pair` and `triple` take a `(ErlangTerm | None)`, so the result of `ErlangTermDecoder.decode` goes straight in and a handler matches without unwrapping first.
 
 The documentation site: a tutorial, a guide to reading messages, and a page for every type generated from the docstrings.
 
@@ -82,7 +82,9 @@ The documentation site: a tutorial, a guide to reading messages, and a page for 
 
 ### Added
 
-`ErlangShapes` reads a term without `try`: `pair` and `triple` split a tuple, `is_atom` compares an atom's name, and `at` and `get` return `None` when the term is not a list or a map.
+`ErlangShapes.is_atom` compares an atom's name, and `ErlangShapes.pair` and `triple` split a two or three element tuple into its elements.
+
+A term reads without `try`: `ErlangList.at` and `ErlangTuple.at` give the element at an index, and `ErlangMap.get` gives the value under a key, each returning `None` when the term is another kind or holds nothing there.
 
 ### Fixed
 
@@ -92,4 +94,4 @@ The first use of the C library is kept to one thread, so creating two nodes at t
 
 ### Added
 
-The first release: an Erlang C node for Pony. Terms are Pony values, one class per wire type, decode and encode as whole values, and the C library is wrapped by a shim that CMake builds into one static archive, so a program wants no `ei` at run time and nothing on a library path.
+The first release: an Erlang C node for Pony. Terms are Pony values, one class per wire type, decoded and encoded as whole values. The C library is wrapped by a shim that CMake builds into one static archive, so a program wants no `ei` at run time and nothing on a library path.
