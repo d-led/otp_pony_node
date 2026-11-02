@@ -117,6 +117,22 @@ flush()
 `integration.sh` runs exactly that against the demo in both directions, and
 fails if either exchange does not happen.
 
+## Liveness
+
+A node of Erlang's own polls a connection it has nothing to say on, and drops
+the other end when the polls go unanswered. Nothing has to be sent from this
+side: `erl_interface` answers a poll from inside the receive call, so a node
+answers them for as long as it is reading its connection.
+
+A connection that nobody reads for longer than the other node's `net_ticktime`
+(60 seconds by default) is dropped. The Erlang side says so, with `** Node ...
+not responding **` in its log and a `nodedown` event, so a node that serves
+keeps reading for as long as a caller may be quiet, which is what the demo
+does.
+
+`receive_with_timeout` counts its time as a deadline: the polls that arrive on
+a quiet connection do not start the wait again.
+
 ## Before it works
 
 Publishing needs epmd, the port mapper that Erlang starts for itself. A machine

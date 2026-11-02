@@ -25,7 +25,7 @@ actor PonyNode
       _env.out.print("Pony: connected as " + _erl.this_nodename())
     end
 
-    receive_loop(_erl)
+    receive_loop(_erl, 5_000)
 
   be serve(port: U32) =>
     """
@@ -51,7 +51,11 @@ actor PonyNode
     match _erl.accept_with_timeout(30_000)
     | let connection: EInterface =>
       _env.out.print("Pony: " + connection.peer_nodename() + " called in")
-      receive_loop(connection)
+      // A served connection is read for as long as the caller may be quiet.
+      // The other side polls a connection it has nothing to say on, and this
+      // node answers those polls whenever it is reading; a connection that
+      // nobody reads for longer than the other side's net_ticktime is dropped.
+      receive_loop(connection, 60_000)
       accept_loop()
     | AcceptTimedOut =>
       _env.out.print("Pony: nobody called")
@@ -59,8 +63,8 @@ actor PonyNode
       _env.out.print("Pony: accepting failed (" + _erl.last_error() + ")")
     end
 
-  fun ref receive_loop(connection: EInterface) =>
-    match connection.receive_with_timeout(5_000)
+  fun ref receive_loop(connection: EInterface, patience_ms: U32) =>
+    match connection.receive_with_timeout(patience_ms)
     | ReceiveFailed =>
       _env.out.print("Pony: connection closed or unusable ("
         + _erl.last_error() + ")")
@@ -72,7 +76,7 @@ actor PonyNode
       answer(connection, message)
     end
 
-    receive_loop(connection)
+    receive_loop(connection, patience_ms)
 
   fun ref answer(connection: EInterface, message: EMessage ref) =>
     match CallDecoder(message)

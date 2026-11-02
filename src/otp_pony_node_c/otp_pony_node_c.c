@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #if defined(_WIN32)
 #include <winsock2.h>
@@ -81,6 +82,25 @@ static int is_timeout(int result)
     return (result == ERL_TIMEOUT) || (erl_errno == ETIMEDOUT)
            || (erl_errno == ERL_TIMEOUT);
 }
+
+/* Milliseconds from a clock that does not jump.  The other side polls a
+ * connection it has nothing to say on, and every poll ends the receive it
+ * interrupted: counting the timeout again from each poll would let a receive
+ * that asked for a minute wait forever on a connection polled every fifteen
+ * seconds. */
+#if defined(_WIN32)
+static uint64_t opn_now_ms(void) { return (uint64_t)GetTickCount64(); }
+#else
+static uint64_t opn_now_ms(void)
+{
+    struct timespec now;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+        return 0;
+
+    return (uint64_t)now.tv_sec * 1000u + (uint64_t)now.tv_nsec / 1000000u;
+}
+#endif
 
 /* A term declares its payload length in its own bytes, and ei_decode_* takes
  * no capacity, so a declared length is only safe once it fits in what has
@@ -491,6 +511,7 @@ int opn_ei_message_from(const opn_ei_message_t *self, char *node,
 opn_ei_message_t *opn_ei_receive_tmo(int fd, unsigned ms, int *timed_out)
 {
     opn_ei_message_t *self;
+    uint64_t deadline;
     int res;
 
     if (!timed_out)
@@ -501,20 +522,35 @@ opn_ei_message_t *opn_ei_receive_tmo(int fd, unsigned ms, int *timed_out)
     if (!self)
         return NULL;
 
-    do {
-        if (ms != 0)
-            res = ei_xreceive_msg_tmo(fd, &self->msg, &self->buff, ms);
-        else
+    deadline = (ms != 0) ? opn_now_ms() + ms : 0;
+
+    for (;;) {
+        if (ms == 0) {
             res = ei_xreceive_msg(fd, &self->msg, &self->buff);
+        } else if (deadline == 0) {
+            res = ei_xreceive_msg_tmo(fd, &self->msg, &self->buff, ms);
+        } else {
+            uint64_t now = opn_now_ms();
+
+            if (now >= deadline) {
+                *timed_out = 1;
+                opn_ei_message_destroy(self);
+                return NULL;
+            }
+
+            res = ei_xreceive_msg_tmo(fd, &self->msg, &self->buff,
+                                      (unsigned)(deadline - now));
+        }
 
         if (res < 0) {
             *timed_out = is_timeout(res);
             opn_ei_message_destroy(self);
             return NULL;
         }
-    } while (res == ERL_TICK);
 
-    return self;
+        if (res != ERL_TICK)
+            return self;
+    }
 }
 
 /* Builds an erlang_pid from its parts so that callers never own a C struct. */

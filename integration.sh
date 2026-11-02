@@ -144,3 +144,18 @@ if ! elixir "${caller_flags[@]}" --cookie secretcookie incoming.exs "$pony_node"
 fi
 
 echo "the Elixir node called the Pony node"
+
+# A quiet connection.  The Erlang side polls a connection it has nothing to say
+# on and drops the other end when the polls are not answered; a node answers
+# them while it is reading.  The caller is given a tick time it cannot ignore,
+# and says nothing for more than twice as long before it speaks.
+silenced_caller_flags=(--sname "quiet@${pony_node#*@}" --erl "-kernel net_ticktime 4")
+
+if ! elixir "${silenced_caller_flags[@]}" --cookie secretcookie incoming.exs \
+  "$pony_node" 9000; then
+  echo "the Pony node was dropped while it was quiet:" >&2
+  cat "$pony_log" >&2
+  exit 1
+fi
+
+echo "the Pony node stayed reachable through a silence"

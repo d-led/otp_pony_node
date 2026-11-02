@@ -276,6 +276,11 @@ Elixir side.
 * A node of this library calling another node of the same process has not been
   shown to be safe either. Another program is the supported other side, which
   is how the tests of a call in are run.
+* A connection is kept alive while it is read: the other side polls it, and the
+  C library answers the polls from inside a receive. A connection that nobody
+  reads for longer than the other node's `net_ticktime` (sixty seconds by
+  default) is dropped and reported there as down, so a node that serves keeps
+  reading.
 
 ## API Documentation
 
