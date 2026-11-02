@@ -133,6 +133,9 @@ does.
 `receive_with_timeout` counts its time as a deadline: the polls that arrive on
 a quiet connection do not start the wait again.
 
+This side does not poll, so it learns that a connection is gone on the next
+read or write rather than while it is quiet.
+
 ## Before it works
 
 Publishing needs epmd, the port mapper that Erlang starts for itself. A machine

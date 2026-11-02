@@ -280,7 +280,8 @@ Elixir side.
   C library answers the polls from inside a receive. A connection that nobody
   reads for longer than the other node's `net_ticktime` (sixty seconds by
   default) is dropped and reported there as down, so a node that serves keeps
-  reading.
+  reading. This side does not poll, and notices a connection that went away on
+  the next read or write.
 
 ## API Documentation
 
