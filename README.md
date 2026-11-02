@@ -302,7 +302,7 @@ guide, and a page for every type, generated from the docstrings in
 ./integration.sh    # round trip against a live Elixir node, needs Elixir
 ./ci-local.sh       # the Linux CI job, in a container
 ./docs.sh           # the documentation site, needs mkdocs-material
-./check_examples.py # every complete example in the markdown, compiled
+./check_examples.py # the complete examples in the markdown, type checked
 ```
 
 The container carries the toolchain the Linux job installs: `ci.yml` asks for

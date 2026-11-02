@@ -55,10 +55,24 @@ def as_program(body):
 
 
 def compile_example(directory, program):
-    """The compiler's own words about the example, and whether it built."""
+    """The compiler's own words about the example, and whether it type checked.
+
+    The first passes only, so nothing is linked: an example needs the native
+    archive to link, and the page that shows it is checked where the archive is
+    not built. That it also links is what `./build.sh` proves.
+    """
     (directory / "main.pony").write_text(program)
     finished = subprocess.run(
-        ["ponyc", "-p", str(ROOT), "-o", str(directory), str(directory)],
+        [
+            "ponyc",
+            "--pass",
+            "final",
+            "-p",
+            str(ROOT),
+            "-o",
+            str(directory),
+            str(directory),
+        ],
         capture_output=True,
         text=True,
     )
@@ -93,7 +107,7 @@ def main():
                 for output in report:
                     print("      " + output)
 
-    print(f"\n{checked} examples compiled, {failed} did not, {fragments} fragments skipped")
+    print(f"\n{checked} examples type checked, {failed} did not, {fragments} fragments skipped")
     return 1 if failed else 0
 
 
