@@ -226,6 +226,11 @@ class EInterface
     """
     Waits for a message, giving up after `timeout_ms`; zero means wait forever
     and is the same as `receive`.
+
+    The time is a deadline: the polls the other side sends on a quiet
+    connection do not start it again. Those polls are answered here, which is
+    what keeps the connection alive, so a connection nobody reads for longer
+    than the other node's `net_ticktime` is dropped by that node.
     """
     if not connected() then return ReceiveFailed end
 
