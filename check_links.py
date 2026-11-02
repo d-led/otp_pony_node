@@ -75,6 +75,10 @@ def main():
     broken = 0
     checked = 0
 
+    if not pages:
+        print("site/ holds no page, so nothing was checked: run ./docs.sh, which builds it", file=sys.stderr)
+        return 2
+
     for page in pages:
         for href in LINK.findall(page.read_text(errors="replace")):
             found = target_of(page, href)

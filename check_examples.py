@@ -108,6 +108,14 @@ def main():
                     print("      " + output)
 
     print(f"\n{checked} examples type checked, {failed} did not, {fragments} fragments skipped")
+
+    if checked == 0:
+        print(
+            "no example was found, so nothing was checked: the pages this reads "
+            "are missing or their ```pony blocks are no longer marked as such",
+            file=sys.stderr,
+        )
+        return 1
     return 1 if failed else 0
 
 
