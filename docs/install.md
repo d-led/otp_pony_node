@@ -3,7 +3,7 @@
 ## Add the library
 
 ```bash
-corral add github.com/d-led/otp_pony_node.git --version 0.7.1
+corral add github.com/d-led/otp_pony_node.git --version 0.7.2
 corral fetch
 ```
 

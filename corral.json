@@ -8,7 +8,7 @@
     "homepage": "https://github.com/d-led/otp_pony_node",
     "license": "MPL-2.0",
     "documentation_url": "https://github.com/d-led/otp_pony_node/blob/master/README.md",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "name": "otp_pony_node"
   }
 }
