@@ -58,6 +58,12 @@ def rewrite(text):
             return "](" + name + ".md" + anchor + ")"
         return to_stdlib(match, "https://stdlib.ponylang.io/")
 
+    def line_anchor(anchor):
+        # pony-doc names a source line `#L-0-<line>`; the ids the built source
+        # pages carry come from the line numbers of their one code block.
+        found = re.fullmatch(r"#L-0-(\d+)", anchor)
+        return "#__codelineno-0-" + found.group(1) if found else anchor
+
     def one_source(match):
         path, anchor = match.group(1), match.group(2) or ""
         if not path.startswith(ours + "/"):
@@ -65,7 +71,7 @@ def rewrite(text):
 
         name = path.split("/", 1)[1]
         if (sources / (name + ".md")).exists():
-            return "](src/" + path + ".md" + anchor + ")"
+            return "](" + "src/" + path + ".md" + line_anchor(anchor) + ")"
 
         # A member this package inherits gets a source link named after this
         # module and the file that defines it, which is the standard library's.
@@ -87,3 +93,8 @@ if [ "${1:-}" = "--serve" ]; then
 fi
 
 mkdocs build
+
+# The links are checked on what was just built: the id of a source line exists
+# only after rendering, which is the one thing mkdocs' own anchor check cannot
+# see, and it is why that check is turned off in mkdocs.yml.
+./check_links.py

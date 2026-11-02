@@ -24,6 +24,12 @@ nav:
 not_in_nav: |
   api/**
 
+validation:
+  # ./check_links.py checks every link and anchor of the built site, which is
+  # the only place a source page's line ids exist. Left on, this would report
+  # those working links as missing.
+  anchors: ignore
+
 markdown_extensions:
   - admonition
   - pymdownx.details
